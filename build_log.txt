@@ -1,0 +1,5 @@
+
+> faubourg-devis@0.0.0 build
+> tsc -b && vite build
+
+src/lib/leads-store.ts(1,42): error TS6196: 'LeadStatus' is declared but never used.
