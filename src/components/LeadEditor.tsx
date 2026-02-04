@@ -20,8 +20,7 @@ import {
     Check,
     Plus,
     Minus,
-    Wine,
-    Info
+    Wine
 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './PdfDocument';
