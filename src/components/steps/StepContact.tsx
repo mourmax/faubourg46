@@ -21,26 +21,26 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-10 max-w-xl mx-auto py-4">
-            <div className="text-center space-y-4">
-                <h2 className="text-4xl font-black gold-text-gradient tracking-tight">{t.contact.title}</h2>
-                <p className="text-neutral-400 text-sm font-medium tracking-wide uppercase">{t.contact.subtitle}</p>
+        <form id="step-contact-form" onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto py-2">
+            <div className="text-center space-y-2">
+                <h2 className="text-2xl font-black uppercase tracking-widest text-dark-900">{t.contact.title}</h2>
+                <p className="text-neutral-500 text-xs font-bold tracking-widest uppercase">{t.contact.subtitle}</p>
             </div>
 
             <div className="space-y-8">
                 {/* Type Toggle */}
-                <div className="flex p-1 bg-neutral-100 rounded-2xl">
+                <div className="flex p-1 bg-neutral-100 rounded-none border border-neutral-200">
                     <button
                         type="button"
                         onClick={() => onChange({ isCompany: false })}
-                        className={`flex-1 py-3 px-6 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${!contact.isCompany ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                        className={`flex-1 py-3 px-6 rounded-none text-xs font-black uppercase tracking-widest transition-all ${!contact.isCompany ? 'bg-dark-900 text-white shadow-sm' : 'text-neutral-500 hover:text-dark-900'}`}
                     >
                         {t.contact.individual}
                     </button>
                     <button
                         type="button"
                         onClick={() => onChange({ isCompany: true })}
-                        className={`flex-1 py-3 px-6 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${contact.isCompany ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                        className={`flex-1 py-3 px-6 rounded-none text-xs font-black uppercase tracking-widest transition-all ${contact.isCompany ? 'bg-dark-900 text-white shadow-sm' : 'text-neutral-500 hover:text-dark-900'}`}
                     >
                         {t.contact.pro}
                     </button>
@@ -181,10 +181,17 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                 </div>
             </div>
 
-            <Button type="submit" className="w-full h-16 text-xl font-black gap-3 tracking-tighter shadow-xl gold-gradient border-b-4 border-gold-700 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                {t.common.next}
-                <ArrowRight className="w-6 h-6" />
-            </Button>
+            {/* Sticky Footer */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-neutral-200 z-50 flex justify-center">
+                <Button
+                    type="submit"
+                    form="step-contact-form"
+                    className="w-full max-w-md h-14 text-sm font-black uppercase tracking-widest shadow-xl bg-dark-900 text-white hover:bg-gold-500 hover:border-gold-600 transition-all rounded-none"
+                >
+                    {t.common.next}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+            </div>
         </form>
     );
 }

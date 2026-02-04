@@ -39,12 +39,19 @@ export const translations = {
         },
         event: {
             title: "Date & Service",
-            subtitle: "Retour sur les disponibilités dans la journée.",
+            subtitle: "L'équipe du FAUBOURG 46 reviendra vers vous dans la journée pour confirmer la disponibilité.",
             dateLabel: "Date de l'événement",
             serviceLabel: "Créneau horaire",
             guestsLabel: "Nombre de convives",
             brunchWarning: "Le week-end midi, seule la formule Brunch est disponible.",
             eveningWarning: "Pour réserver les deux services (19h30-02h00), choisissez une formule Festive.",
+        },
+        services: {
+            LUNCH: "Déjeuner (Midi)",
+            DINNER_1: "Dîner - Service 1",
+            DINNER_2: "Dîner - Service 2",
+            DINNER_FULL: "Dîner - Soirée Complète",
+            DINNER_STD: "Dîner (Soir)",
         },
         menu: {
             title: "Choix de la Formule & Options",
@@ -109,6 +116,13 @@ export const translations = {
             guestsLabel: "Number of Guests",
             brunchWarning: "On weekends lunch, only Brunch formula is available.",
             eveningWarning: "To book both slots (7:30 PM - 2:00 AM), choose a Festive formula.",
+        },
+        services: {
+            LUNCH: "Lunch",
+            DINNER_1: "Dinner - 1st Seating",
+            DINNER_2: "Dinner - 2nd Seating",
+            DINNER_FULL: "Dinner - Full Evening",
+            DINNER_STD: "Dinner (Evening)",
         },
         menu: {
             title: "Menu Selection",

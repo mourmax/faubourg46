@@ -82,7 +82,14 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                 <View>
                     <Text style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>DÉTAILS</Text>
                     <Text style={{ fontSize: 10 }}>Date: {selection.event.date.toLocaleDateString()}</Text>
-                    <Text style={{ fontSize: 10 }}>Service: {selection.event.service.replace('_', ' ')}</Text>
+                    <Text style={{ fontSize: 10 }}>Service: {(() => {
+                        const isWeekend = selection.event.date.getDay() === 5 || selection.event.date.getDay() === 6;
+                        if (selection.event.service === 'LUNCH') return 'Déjeuner';
+                        if (selection.event.service === 'DINNER_1') return 'Dîner - Service 1';
+                        if (selection.event.service === 'DINNER_2') return 'Dîner - Service 2';
+                        if (selection.event.service === 'DINNER_FULL') return isWeekend ? 'Dîner - Soirée Complète' : 'Dîner';
+                        return selection.event.service;
+                    })()}</Text>
                     <Text style={{ fontSize: 10 }}>
                         Convives: {selection.event.guests} Adulte{selection.event.guests > 1 ? 's' : ''}
                         {selection.event.childrenGuests && selection.event.childrenGuests > 0 ? ` + ${selection.event.childrenGuests} Enfant${selection.event.childrenGuests > 1 ? 's' : ''}` : ''}

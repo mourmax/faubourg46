@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input, Button } from '../ui/components';
 import type { QuoteSelection } from '../../lib/types';
-import { Calendar, Users, Clock, ArrowRight, Sun, Moon, Stars, Zap, Info, Check } from 'lucide-react';
+import { Calendar, Users, Clock, ArrowRight, ArrowLeft, Sun, Moon, Stars, Zap, Info, Check } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface StepServiceProps {
@@ -11,11 +11,20 @@ interface StepServiceProps {
     onPrev: () => void;
 }
 
-export function StepService({ event, onChange, onNext }: StepServiceProps) {
+export function StepService({ event, onChange, onNext, onPrev }: StepServiceProps) {
     const { t, language } = useLanguage();
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange({ date: new Date(e.target.value) });
+        const newDate = new Date(e.target.value);
+        const newDay = newDate.getDay();
+        const isNewWeekend = newDay === 5 || newDay === 6;
+
+        // If switching to a weekday/Sunday and a seating-specific dinner was selected, switch to full
+        if (!isNewWeekend && (event.service === 'DINNER_1' || event.service === 'DINNER_2')) {
+            onChange({ date: newDate, service: 'DINNER_FULL' });
+        } else {
+            onChange({ date: newDate });
+        }
     };
 
     const formatDate = (date: Date) => {
@@ -26,40 +35,46 @@ export function StepService({ event, onChange, onNext }: StepServiceProps) {
         }
     };
 
-    const serviceLabels: Record<string, Record<string, any>> = {
-        fr: {
-            LUNCH: { label: 'Déjeuner (Midi)', sub: 'Ambiance Brasserie', icon: Sun },
-            DINNER_1: { label: 'Dîner - Service 1', sub: 'Première partie de soirée', icon: Moon },
-            DINNER_2: { label: 'Dîner - Service 2', sub: 'Ambiance Festive', icon: Stars },
-            DINNER_FULL: { label: 'Dîner - Soirée Complète', sub: 'L\'expérience intégrale', icon: Zap },
+    const isWeekend = event.date.getDay() === 5 || event.date.getDay() === 6;
+
+    const serviceLabels: Record<string, any> = {
+        LUNCH: { label: t.services.LUNCH, sub: language === 'fr' ? 'Ambiance Brasserie' : 'Brasserie Vibe', icon: Sun },
+        DINNER_1: { label: t.services.DINNER_1, sub: language === 'fr' ? 'Première partie de soirée' : 'Early evening glow', icon: Moon },
+        DINNER_2: { label: t.services.DINNER_2, sub: language === 'fr' ? 'Ambiance Festive' : 'Festive Atmosphere', icon: Stars },
+        DINNER_FULL: {
+            label: isWeekend ? t.services.DINNER_FULL : t.services.DINNER_STD,
+            sub: isWeekend
+                ? (language === 'fr' ? 'L\'expérience intégrale' : 'The total experience')
+                : (language === 'fr' ? 'Ambiance Faubourg' : 'Faubourg Atmosphere'),
+            icon: isWeekend ? Zap : Moon
         },
-        en: {
-            LUNCH: { label: 'Lunch', sub: 'Brasserie Vibe', icon: Sun },
-            DINNER_1: { label: 'Dinner - 1st Seating', sub: 'Early evening glow', icon: Moon },
-            DINNER_2: { label: 'Dinner - 2nd Seating', sub: 'Festive Atmosphere', icon: Stars },
-            DINNER_FULL: { label: 'Dinner - Full Evening', sub: 'The total experience', icon: Zap },
-        }
     };
 
-    const services = [
-        { id: 'LUNCH', ...serviceLabels[language]['LUNCH'], time: '12h00 - 15h00' },
-        { id: 'DINNER_1', ...serviceLabels[language]['DINNER_1'], time: '19h30 - 21h50' },
-        { id: 'DINNER_2', ...serviceLabels[language]['DINNER_2'], time: '22h15 - Fermeture' },
-        { id: 'DINNER_FULL', ...serviceLabels[language]['DINNER_FULL'], time: '19h30 - Fermeture' },
+    const allServices = [
+        { id: 'LUNCH', ...serviceLabels['LUNCH'], time: '12h00 - 15h00' },
+        { id: 'DINNER_1', ...serviceLabels['DINNER_1'], time: '19h30 - 21h50' },
+        { id: 'DINNER_2', ...serviceLabels['DINNER_2'], time: '22h15 - Fermeture' },
+        { id: 'DINNER_FULL', ...serviceLabels['DINNER_FULL'], time: '19h30 - Fermeture' },
     ];
 
+    const services = allServices.filter(s => {
+        if (isWeekend) return true;
+        // On weekdays and Sunday, only show Lunch and a generic Dinner
+        return s.id === 'LUNCH' || s.id === 'DINNER_FULL';
+    });
+
     return (
-        <div className="space-y-16 max-w-4xl mx-auto py-8">
-            <div className="text-center space-y-4">
-                <h2 className="text-5xl font-black gold-text-gradient tracking-tighter uppercase">{t.event.title}</h2>
+        <div className="space-y-8 max-w-4xl mx-auto py-2">
+            <div className="text-center space-y-2">
+                <h2 className="text-2xl font-black uppercase tracking-widest text-dark-900">{t.event.title}</h2>
                 <div className="flex justify-center items-center gap-4">
-                    <div className="h-px w-12 bg-gold-300" />
-                    <p className="text-neutral-400 text-[10px] font-black uppercase tracking-[0.4em]">{t.event.subtitle}</p>
-                    <div className="h-px w-12 bg-gold-300" />
+                    <div className="h-px w-8 bg-gold-500" />
+                    <p className="text-neutral-500 text-[9px] font-black uppercase tracking-[0.3em]">{t.event.subtitle}</p>
+                    <div className="h-px w-8 bg-gold-500" />
                 </div>
             </div>
 
-            <div className="grid lg:grid-cols-12 gap-16">
+            <div className="grid lg:grid-cols-12 gap-8 pb-32">
                 {/* Left: Date & Guests */}
                 <div className="lg:col-span-5 space-y-12">
                     <div className="space-y-4 group">
@@ -119,10 +134,10 @@ export function StepService({ event, onChange, onNext }: StepServiceProps) {
                         </div>
                     )}
 
-                    <div className="p-8 bg-gold-50/50 rounded-[2.5rem] border border-gold-100/50 space-y-3">
-                        <Info className="w-6 h-6 text-gold-600" />
-                        <p className="text-[10px] text-gold-800/60 font-black uppercase tracking-widest leading-relaxed">
-                            Les disponibilités sont mises à jour en temps réel selon le calendrier Faubourg 46.
+                    <div className="p-4 bg-neutral-50 border border-neutral-200 space-y-2">
+                        <Info className="w-5 h-5 text-gold-600" />
+                        <p className="text-[10px] text-neutral-600 font-bold uppercase tracking-widest leading-relaxed">
+                            {t.event.subtitle}
                         </p>
                     </div>
                 </div>
@@ -145,42 +160,31 @@ export function StepService({ event, onChange, onNext }: StepServiceProps) {
                                 <button
                                     key={svc.id}
                                     className={`
-                                        group/btn relative overflow-hidden flex items-center p-6 rounded-[2.5rem] border-2 transition-all duration-700
+                                        group/btn relative overflow-hidden flex items-center p-4 border transition-all duration-300
                                         ${isActive
-                                            ? 'border-gold-500 bg-white shadow-[0_30px_60px_-15px_rgba(175,137,54,0.15)] ring-1 ring-gold-200 translate-x-4'
-                                            : 'border-neutral-50 bg-white/50 hover:border-gold-300 hover:bg-white'}
+                                            ? 'border-dark-900 bg-dark-900 text-white shadow-xl'
+                                            : 'border-neutral-200 bg-white hover:border-gold-500 hover:text-gold-600'}
                                     `}
                                     onClick={() => onChange({ service: svc.id as any })}
                                 >
-                                    {isActive && (
-                                        <div className="absolute inset-y-0 left-0 w-2 gold-gradient" />
-                                    )}
-
                                     <div className={`
-                                        w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 mr-6
-                                        ${isActive ? 'gold-gradient text-white rotate-12 scale-110 shadow-lg' : 'bg-neutral-100 text-neutral-400 group-hover/btn:bg-gold-50 group-hover/btn:text-gold-500'}
+                                        w-12 h-12 flex items-center justify-center transition-all duration-300 mr-4 border
+                                        ${isActive ? 'border-gold-500 bg-gold-500 text-white' : 'border-neutral-200 bg-neutral-50 text-neutral-400 group-hover/btn:border-gold-500 group-hover/btn:text-gold-500'}
                                     `}>
-                                        <Icon className="w-7 h-7 stroke-[2.5]" />
+                                        <Icon className="w-6 h-6 stroke-[1.5]" />
                                     </div>
 
                                     <div className="flex-1 text-left">
-                                        <div className={`font-black uppercase tracking-tight text-lg leading-none ${isActive ? 'text-neutral-900' : 'text-neutral-700'}`}>
+                                        <div className={`font-black uppercase tracking-widest text-sm leading-none ${isActive ? 'text-white' : 'text-dark-900'}`}>
                                             {svc.label}
                                         </div>
-                                        <div className="flex items-center gap-3 mt-1.5">
-                                            <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">{svc.sub}</span>
-                                            <div className="w-1 h-1 rounded-full bg-gold-300" />
-                                            <div className="flex items-center gap-1.5 text-[9px] text-gold-600 font-black uppercase tracking-widest">
+                                        <div className="flex items-center gap-3 mt-1.5 opacity-80">
+                                            <span className="text-[9px] font-bold uppercase tracking-widest">{svc.sub}</span>
+                                            <div className={`w-1 h-1 rounded-full ${isActive ? 'bg-gold-500' : 'bg-neutral-300'}`} />
+                                            <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest">
                                                 <Clock className="w-3 h-3" /> {svc.time}
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className={`
-                                        h-10 w-10 rounded-full border-2 flex items-center justify-center transition-all duration-500
-                                        ${isActive ? 'border-gold-500 bg-gold-50 text-gold-600' : 'border-neutral-100 bg-transparent text-transparent'}
-                                    `}>
-                                        <Check className="w-5 h-5 stroke-[4]" />
                                     </div>
                                 </button>
                             );
@@ -189,12 +193,25 @@ export function StepService({ event, onChange, onNext }: StepServiceProps) {
                 </div>
             </div>
 
-            <div className="flex justify-center pt-8">
-                <Button onClick={onNext} className="h-20 px-16 text-2xl font-black gap-4 tracking-tighter rounded-full gold-gradient shadow-[0_20px_40px_-10px_rgba(175,137,54,0.3)] hover:scale-105 active:scale-95 transition-all group">
+            {/* Sticky Footer */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-neutral-200 z-50 flex justify-center gap-4">
+                <Button
+                    onClick={onPrev}
+                    variant="outline"
+                    className="w-1/3 max-w-[150px] h-14 text-xs font-black uppercase tracking-widest border-dark-900 text-dark-900 hover:bg-neutral-100 rounded-none"
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    {t.common.prev}
+                </Button>
+                <Button
+                    onClick={onNext}
+                    disabled={!event.date || !event.guests || !event.service}
+                    className="flex-1 max-w-md h-14 text-sm font-black uppercase tracking-widest shadow-xl bg-dark-900 text-white hover:bg-gold-500 hover:border-gold-600 transition-all rounded-none"
+                >
                     {t.common.next}
-                    <ArrowRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
+                    <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
             </div>
-        </div>
+        </div >
     );
 }

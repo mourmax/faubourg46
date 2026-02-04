@@ -1,6 +1,6 @@
 import type { QuoteSelection, FormulaDefinition } from '../../lib/types';
 import { CHAMPAGNES, EXTRAS } from '../../lib/data';
-import { Check, Plus, Minus, Wine, Info, ArrowRight } from 'lucide-react';
+import { Check, Plus, Minus, Wine, Info, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/components';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -13,7 +13,7 @@ interface StepMenuProps {
     mode: 'formulas' | 'options';
 }
 
-export function StepMenu({ selection, formulas, onChange, onNext, mode }: StepMenuProps) {
+export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }: StepMenuProps) {
     const { formula, options, event } = selection;
     const { t } = useLanguage();
 
@@ -101,24 +101,23 @@ export function StepMenu({ selection, formulas, onChange, onNext, mode }: StepMe
     const getOptionQty = (name: string) => options.find(o => o.name === name)?.quantity || 0;
 
     return (
-        <div className="space-y-16 max-w-6xl mx-auto py-8">
-            <div className="text-center space-y-4">
-                <h2 className="text-5xl font-black gold-text-gradient tracking-tighter uppercase">{mode === 'formulas' ? t.menu.formulas : t.menu.options}</h2>
+        <div className="space-y-8 max-w-6xl mx-auto py-2">
+            <div className="text-center space-y-2">
+                <h2 className="text-2xl font-black uppercase tracking-widest text-dark-900">{mode === 'formulas' ? t.menu.formulas : t.menu.options}</h2>
                 <div className="flex justify-center items-center gap-4">
-                    <div className="h-px w-12 bg-gold-300" />
-                    <p className="text-neutral-500 text-xs font-bold uppercase tracking-[0.4em]">{mode === 'formulas' ? t.menu.subtitle : "Sublimer votre événement"}</p>
-                    <div className="h-px w-12 bg-gold-300" />
+                    <div className="h-px w-8 bg-gold-500" />
+                    <p className="text-neutral-500 text-[9px] font-black uppercase tracking-[0.3em]">{mode === 'formulas' ? t.menu.subtitle : "Sublimer votre événement"}</p>
+                    <div className="h-px w-8 bg-gold-500" />
                 </div>
             </div>
 
             {mode === 'formulas' && (
-                <div className="space-y-10">
-                    <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-neutral-100 pb-8">
+                <div className="space-y-6 pb-32">
+                    <div className="flex flex-col md:flex-row justify-between items-end gap-2 border-b border-neutral-200 pb-4">
                         <div>
-                            <h3 className="text-2xl font-black uppercase tracking-tighter text-neutral-900">
-                                Nos <span className="gold-text-gradient">Formules</span> Groupes
+                            <h3 className="text-lg font-black uppercase tracking-widest text-dark-900">
+                                Menu
                             </h3>
-                            <p className="text-[10px] text-neutral-500 font-bold tracking-widest uppercase mt-1">Sélectionnez l'expérience qui vous ressemble</p>
                         </div>
                     </div>
 
@@ -135,19 +134,20 @@ export function StepMenu({ selection, formulas, onChange, onNext, mode }: StepMe
 
                                 if (!available) {
                                     return (
+                                    return (
                                         <div
                                             key={f.id}
-                                            className="relative flex flex-col p-8 rounded-[2.5rem] bg-neutral-50/50 border-2 border-dashed border-neutral-100 opacity-40 grayscale blur-[0.5px] group/locked overflow-hidden"
+                                            className="relative flex flex-col p-6 bg-neutral-50 border border-neutral-200 opacity-60 grayscale blur-[0.5px] group/locked overflow-hidden"
                                         >
-                                            <div className="absolute top-4 right-6 flex items-center gap-2 bg-neutral-900 text-white text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter shadow-lg">
+                                            <div className="absolute top-2 right-2 flex items-center gap-2 bg-dark-900 text-white text-[9px] font-black px-2 py-1 uppercase tracking-widest">
                                                 <Info className="w-3 h-3 text-gold-500" />
                                                 {reason}
                                             </div>
                                             <div className="space-y-1">
-                                                <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                                                <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
                                                     {f.type === 'TAPAS' ? 'Tapas' : 'Brasserie'}
                                                 </div>
-                                                <h4 className="text-xl font-black text-neutral-500 uppercase tracking-tighter">
+                                                <h4 className="text-lg font-black text-neutral-500 uppercase tracking-widest">
                                                     {f.name}
                                                 </h4>
                                             </div>
@@ -159,25 +159,25 @@ export function StepMenu({ selection, formulas, onChange, onNext, mode }: StepMe
                                     <div
                                         key={f.id}
                                         className={`
-                                            cursor-pointer transition-all duration-700 relative flex flex-col p-10 rounded-[3rem] border-2 group
+                                            cursor-pointer transition-all duration-300 relative flex flex-col p-8 border-2 group
                                             ${isSelected
-                                                ? 'border-gold-500 bg-white shadow-[0_40px_80px_-20px_rgba(175,137,54,0.25)] ring-1 ring-gold-200 scale-[1.05] z-10'
-                                                : 'bg-white/50 border-neutral-100 hover:border-gold-300 hover:shadow-xl hover:-translate-y-2'}
+                                                ? 'border-gold-500 bg-white shadow-xl scale-[1.01] z-10'
+                                                : 'bg-white border-neutral-200 hover:border-gold-300 hover:shadow-lg hover:-translate-y-1'}
                                         `}
                                         onClick={() => handleFormulaSelect(f.id)}
                                     >
                                         {isSelected && (
-                                            <div className="absolute -top-3 -right-3 w-16 h-16 gold-gradient rounded-full flex items-center justify-center shadow-2xl animate-in zoom-in-50 duration-500 ring-8 ring-white">
-                                                <Check className="w-8 h-8 text-white stroke-[4]" />
+                                            <div className="absolute top-0 right-0 p-2 bg-gold-500 text-white">
+                                                <Check className="w-6 h-6" />
                                             </div>
                                         )}
 
-                                        <div className="space-y-2 mb-10">
-                                            <div className={`text-[11px] font-black uppercase tracking-[0.3em] flex items-center gap-2 ${isSelected ? 'text-gold-700' : 'text-neutral-500'}`}>
-                                                <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-gold-500 animate-pulse' : 'bg-neutral-200'}`} />
+                                        <div className="space-y-2 mb-8">
+                                            <div className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${isSelected ? 'text-gold-600' : 'text-neutral-500'}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-none ${isSelected ? 'bg-gold-500' : 'bg-neutral-300'}`} />
                                                 {f.type === 'TAPAS' ? 'Carte des Tapas' : 'Carte Brasserie'}
                                             </div>
-                                            <h4 className="text-3xl font-black text-neutral-900 tracking-tighter uppercase leading-none group-hover:text-gold-700 transition-colors">
+                                            <h4 className="text-2xl font-black text-dark-900 tracking-widest uppercase leading-none group-hover:text-gold-600 transition-colors">
                                                 {f.name}
                                             </h4>
                                         </div>
@@ -196,11 +196,11 @@ export function StepMenu({ selection, formulas, onChange, onNext, mode }: StepMe
                                                 <span className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.3em] shrink-0">Inclusions</span>
                                                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-neutral-100 to-transparent" />
                                             </div>
-                                            <ul className="grid grid-cols-1 gap-4">
+                                            <ul className="space-y-4">
                                                 {f.included?.map((inc, i) => (
-                                                    <li key={i} className="flex items-start gap-4 text-[14px] text-neutral-600 font-semibold leading-snug group/item">
-                                                        <div className="w-5 h-5 rounded-full bg-gold-50 flex items-center justify-center mt-0.5 shrink-0 group-hover/item:bg-gold-500 transition-colors">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-gold-400 group-hover/item:bg-white" />
+                                                    <li key={i} className="flex items-start gap-4 text-xs text-neutral-600 font-bold uppercase tracking-wide group/item">
+                                                        <div className="w-4 h-4 bg-gold-50 flex items-center justify-center mt-0.5 shrink-0 group-hover/item:bg-gold-500 transition-colors border border-gold-100">
+                                                            <div className="w-1 h-1 bg-gold-400 group-hover/item:bg-white" />
                                                         </div>
                                                         {inc.replace('E/P', 'ENTRÉE / PLAT').replace('P/D', 'PLAT / DESSERT').replace('E/P/D', 'ENTRÉE / PLAT / DESSERT')}
                                                     </li>
@@ -213,7 +213,7 @@ export function StepMenu({ selection, formulas, onChange, onNext, mode }: StepMe
                                                 <div className="absolute top-0 right-0 p-3 opacity-10 group-hover/desc:opacity-30 transition-opacity">
                                                     <Info className="w-8 h-8 text-gold-500" />
                                                 </div>
-                                                <p className="text-[12px] text-neutral-600 font-bold uppercase tracking-tight leading-relaxed italic text-center relative z-10">
+                                                <p className="text-[10px] text-neutral-600 font-bold uppercase tracking-widest leading-relaxed italic text-center relative z-10">
                                                     "{f.description}"
                                                 </p>
                                             </div>
@@ -283,10 +283,22 @@ export function StepMenu({ selection, formulas, onChange, onNext, mode }: StepMe
                 </div>
             )}
 
-            <div className="flex justify-center pt-12 pb-8">
-                <Button onClick={onNext} className="h-24 px-20 text-3xl font-black gap-6 tracking-tighter rounded-[2.5rem] gold-gradient shadow-[0_40px_80px_-15px_rgba(175,137,54,0.4)] hover:scale-105 active:scale-95 transition-all group border-b-8 border-gold-700">
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-neutral-200 z-50 flex justify-center gap-4">
+                <Button
+                    onClick={onPrev}
+                    variant="outline"
+                    className="w-1/3 max-w-[150px] h-14 text-xs font-black uppercase tracking-widest border-dark-900 text-dark-900 hover:bg-neutral-100 rounded-none"
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    {t.common.prev}
+                </Button>
+                <Button
+                    onClick={onNext}
+                    disabled={mode === 'formulas' && !formula.id}
+                    className="flex-1 max-w-md h-14 text-sm font-black uppercase tracking-widest shadow-xl bg-dark-900 text-white hover:bg-gold-500 hover:border-gold-600 transition-all rounded-none"
+                >
                     {t.common.next}
-                    <ArrowRight className="w-10 h-10 group-hover:translate-x-3 transition-transform" />
+                    <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
             </div>
         </div>

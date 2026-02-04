@@ -44,7 +44,7 @@ export function Wizard() {
     };
 
     return (
-        <div className="min-h-screen bg-[#fdfdfc] p-4 md:p-12 font-sans text-neutral-900 relative overflow-hidden">
+        <div className="min-h-screen bg-[#f8f8f8] font-sans text-dark-900 relative overflow-hidden flex flex-col">
             {/* Animated Background Gradients */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gold-500/5 rounded-full blur-[120px] animate-pulse" />
@@ -127,9 +127,8 @@ export function Wizard() {
                 </div>
 
                 {/* Content Container */}
-                <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-gold-100 to-gold-50 rounded-[4rem] blur opacity-20 group-hover:opacity-40 transition duration-1000" />
-                    <Card className="glass-card relative p-8 md:p-14 min-h-[500px] border-none rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.05)]">
+                <div className="relative group max-w-4xl mx-auto w-full px-4 pb-32">
+                    <Card className="relative p-6 md:p-10 min-h-[500px] border border-neutral-200 bg-white shadow-sm rounded-none">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={step}
@@ -185,17 +184,6 @@ export function Wizard() {
                     </Card>
                 </div>
 
-                {/* Floating Navigation Controls */}
-                {step > 1 && step < 4 && (
-                    <div className="flex justify-center gap-10 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                        <button
-                            onClick={prevStep}
-                            className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 hover:text-neutral-900 transition-colors py-4 px-8"
-                        >
-                            &larr; {t.common.prev}
-                        </button>
-                    </div>
-                )}
                 {/* WhatsApp Floating Button */}
                 {settings?.whatsappEnabled && (
                     <a
