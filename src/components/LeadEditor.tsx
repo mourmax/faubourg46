@@ -28,37 +28,37 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
     const [newComment, setNewComment] = useState('');
     const quote = calculateQuoteTotal(lead.selection);
 
-    const handleStatusChange = (newStatus: LeadStatus) => {
-        LeadStore.updateLead(lead.id, { status: newStatus });
+    const handleStatusChange = async (newStatus: LeadStatus) => {
+        await LeadStore.updateLead(lead.id, { status: newStatus });
         setLead(prev => ({ ...prev, status: newStatus }));
         onUpdate();
     };
 
-    const handleContactChange = (field: string, value: string) => {
+    const handleContactChange = async (field: string, value: string) => {
         const updatedSelection = {
             ...lead.selection,
             contact: { ...lead.selection.contact, [field]: value }
         };
-        LeadStore.updateLead(lead.id, { selection: updatedSelection });
+        await LeadStore.updateLead(lead.id, { selection: updatedSelection });
         setLead(prev => ({ ...prev, selection: updatedSelection }));
         onUpdate();
     };
 
-    const handleEventChange = (updates: any) => {
+    const handleEventChange = async (updates: any) => {
         const updatedSelection = {
             ...lead.selection,
             event: { ...lead.selection.event, ...updates }
         };
-        LeadStore.updateLead(lead.id, { selection: updatedSelection });
+        await LeadStore.updateLead(lead.id, { selection: updatedSelection });
         setLead(prev => ({ ...prev, selection: updatedSelection }));
         onUpdate();
     };
 
-    const handleAddComment = (e: React.FormEvent) => {
+    const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newComment.trim()) return;
 
-        const comment = LeadStore.addComment(lead.id, newComment);
+        const comment = await LeadStore.addComment(lead.id, newComment);
         if (comment) {
             setLead(prev => ({ ...prev, comments: [...prev.comments, comment] }));
             setNewComment('');

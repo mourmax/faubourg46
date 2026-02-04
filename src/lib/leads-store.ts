@@ -1,87 +1,150 @@
+import { db } from './firebase';
+import {
+    collection,
+    addDoc,
+    getDocs,
+    updateDoc,
+    doc,
+    deleteDoc,
+    query,
+    orderBy,
+    Timestamp,
+    getDoc
+} from 'firebase/firestore';
 import type { QuoteLead, QuoteSelection, LeadComment } from './types';
 
-const STORAGE_KEY = 'faubourg_leads';
+const LEADS_COLLECTION = 'leads';
+
+// Helper to convert Firestore dates to JS Dates
+const mapLead = (docData: any): QuoteLead => {
+    const data = docData.data();
+    return {
+        ...data,
+        id: docData.id,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+        lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : new Date(data.lastUpdated),
+        selection: {
+            ...data.selection,
+            event: {
+                ...data.selection.event,
+                date: data.selection.event.date instanceof Timestamp
+                    ? data.selection.event.date.toDate()
+                    : new Date(data.selection.event.date)
+            }
+        },
+        comments: (data.comments || []).map((c: any) => ({
+            ...c,
+            date: c.date instanceof Timestamp ? c.date.toDate() : new Date(c.date)
+        }))
+    };
+};
 
 export const LeadStore = {
-    getLeads(): QuoteLead[] {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (!saved) return [];
+    async getLeads(): Promise<QuoteLead[]> {
         try {
-            const parsed = JSON.parse(saved);
-            return parsed.map((lead: any) => ({
-                ...lead,
-                createdAt: new Date(lead.createdAt),
-                lastUpdated: new Date(lead.lastUpdated),
-                selection: {
-                    ...lead.selection,
-                    event: {
-                        ...lead.selection.event,
-                        date: new Date(lead.selection.event.date)
-                    }
-                },
-                comments: lead.comments.map((c: any) => ({
-                    ...c,
-                    date: new Date(c.date)
-                }))
-            }));
+            const leadsRef = collection(db, LEADS_COLLECTION);
+            const q = query(leadsRef, orderBy('createdAt', 'desc'));
+            const querySnapshot = await getDocs(q);
+            return querySnapshot.docs.map(mapLead);
         } catch (e) {
-            console.error('Error parsing leads', e);
+            console.error('Error fetching leads from Firebase', e);
             return [];
         }
     },
 
-    saveLead(selection: QuoteSelection): QuoteLead {
-        const leads = this.getLeads();
-        const newLead: QuoteLead = {
-            id: Math.random().toString(36).substring(2, 9).toUpperCase(),
+    async saveLead(selection: QuoteSelection): Promise<QuoteLead> {
+        // Prepare data for Firestore (Firestore can handle nested objects but not all JS objects like Date directly)
+        const leadData = {
             status: 'NEW',
-            selection: JSON.parse(JSON.stringify(selection)), // Deep clone
-            createdAt: new Date(),
-            lastUpdated: new Date(),
+            selection: JSON.parse(JSON.stringify(selection)), // Already handling dates as strings usually in clone, but let's be safe
+            createdAt: Timestamp.now(),
+            lastUpdated: Timestamp.now(),
             comments: []
         };
 
-        leads.unshift(newLead);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-        return newLead;
+        // Ensure date is a Timestamp
+        leadData.selection.event.date = Timestamp.fromDate(selection.event.date);
+
+        const docRef = await addDoc(collection(db, LEADS_COLLECTION), leadData);
+
+        return {
+            ...leadData,
+            id: docRef.id,
+            createdAt: leadData.createdAt.toDate(),
+            lastUpdated: leadData.lastUpdated.toDate(),
+            selection: {
+                ...selection,
+                event: {
+                    ...selection.event,
+                    date: selection.event.date
+                }
+            },
+            comments: []
+        } as QuoteLead;
     },
 
-    updateLead(id: string, updates: Partial<QuoteLead>): QuoteLead | null {
-        const leads = this.getLeads();
-        const index = leads.findIndex(l => l.id === id);
-        if (index === -1) return null;
+    async updateLead(id: string, updates: Partial<QuoteLead>): Promise<QuoteLead | null> {
+        try {
+            const leadRef = doc(db, LEADS_COLLECTION, id);
+            const firestoreUpdates: any = {
+                ...updates,
+                lastUpdated: Timestamp.now()
+            };
 
-        leads[index] = {
-            ...leads[index],
-            ...updates,
-            lastUpdated: new Date()
-        };
+            // Remove id from updates if present
+            delete firestoreUpdates.id;
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-        return leads[index];
+            await updateDoc(leadRef, firestoreUpdates);
+
+            // Fetch updated doc to return
+            const updatedDoc = await getDoc(leadRef);
+            return updatedDoc.exists() ? mapLead(updatedDoc) : null;
+        } catch (e) {
+            console.error('Error updating lead in Firebase', id, e);
+            return null;
+        }
     },
 
-    addComment(leadId: string, text: string, author: string = 'Admin'): LeadComment | null {
-        const leads = this.getLeads();
-        const lead = leads.find(l => l.id === leadId);
-        if (!lead) return null;
+    async addComment(leadId: string, text: string, author: string = 'Admin'): Promise<LeadComment | null> {
+        try {
+            const leadRef = doc(db, LEADS_COLLECTION, leadId);
+            const leadDoc = await getDoc(leadRef);
+            if (!leadDoc.exists()) return null;
 
-        const newComment: LeadComment = {
-            id: Math.random().toString(36).substring(2, 9),
-            text,
-            date: new Date(),
-            author
-        };
+            const data = leadDoc.data();
+            const comments = data.comments || [];
 
-        lead.comments.push(newComment);
-        lead.lastUpdated = new Date();
+            const newComment: LeadComment = {
+                id: Math.random().toString(36).substring(2, 9),
+                text,
+                date: new Date(),
+                author
+            };
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-        return newComment;
+            // Prepare for firestore
+            const firestoreComment = {
+                ...newComment,
+                date: Timestamp.fromDate(newComment.date)
+            };
+
+            await updateDoc(leadRef, {
+                comments: [...comments, firestoreComment],
+                lastUpdated: Timestamp.now()
+            });
+
+            return newComment;
+        } catch (e) {
+            console.error('Error adding comment in Firebase', leadId, e);
+            return null;
+        }
     },
 
-    deleteLead(id: string) {
-        const leads = this.getLeads().filter(l => l.id !== id);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+    async deleteLead(id: string): Promise<void> {
+        try {
+            await deleteDoc(doc(db, LEADS_COLLECTION, id));
+        } catch (e) {
+            console.error('Error deleting lead from Firebase', id, e);
+        }
     }
 };
+

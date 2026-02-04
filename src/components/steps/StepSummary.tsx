@@ -21,10 +21,13 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
     const hasSaved = useRef(false);
 
     useEffect(() => {
-        if (!hasSaved.current) {
-            LeadStore.saveLead(selection);
-            hasSaved.current = true;
-        }
+        const saveAsync = async () => {
+            if (!hasSaved.current) {
+                await LeadStore.saveLead(selection);
+                hasSaved.current = true;
+            }
+        };
+        saveAsync();
     }, [selection]);
 
     const handleDownload = async () => {

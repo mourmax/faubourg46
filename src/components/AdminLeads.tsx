@@ -22,11 +22,27 @@ interface AdminLeadsProps {
 
 export function AdminLeads({ onEdit }: AdminLeadsProps) {
     const [leads, setLeads] = useState<QuoteLead[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<LeadStatus | 'ALL'>('ALL');
 
+    const fetchLeads = async () => {
+        setLoading(true);
+        const data = await LeadStore.getLeads();
+        setLeads(data);
+        setLoading(false);
+    };
+
+    const handleDelete = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (confirm('Supprimer cette demande ?')) {
+            await LeadStore.deleteLead(id);
+            fetchLeads();
+        }
+    };
+
     useEffect(() => {
-        setLeads(LeadStore.getLeads());
+        fetchLeads();
     }, []);
 
     const filteredLeads = leads.filter(lead => {
@@ -51,13 +67,14 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
         }
     };
 
-    const handleDelete = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (confirm('Supprimer cette demande ?')) {
-            LeadStore.deleteLead(id);
-            setLeads(LeadStore.getLeads());
-        }
-    };
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs">Chargement des demandes...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">
