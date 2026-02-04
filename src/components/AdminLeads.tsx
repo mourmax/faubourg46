@@ -76,7 +76,10 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
         return (
             <div className="flex flex-col items-center justify-center py-40 space-y-6">
                 <div className="w-16 h-16 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs animate-pulse">Chargement des données...</p>
+                <div className="text-center space-y-2">
+                    <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs animate-pulse">Chargement des données...</p>
+                    <p className="text-neutral-600 text-[10px] font-bold uppercase tracking-tighter opacity-50">Connexion à Firestore en cours</p>
+                </div>
             </div>
         );
     }
@@ -209,9 +212,24 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                 })}
 
                 {filteredLeads.length === 0 && (
-                    <div className="text-center py-20 space-y-4">
-                        <div className="text-neutral-600 font-black text-2xl uppercase tracking-widest opacity-20">Aucune demande trouvée</div>
-                        <p className="text-neutral-500 text-xs font-bold uppercase tracking-[0.3em]">Essayez de modifier vos filtres de recherche</p>
+                    <div className="text-center py-32 space-y-6 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/5 mb-2">
+                            <Search className="w-8 h-8 text-neutral-600" />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-neutral-500 font-black text-2xl uppercase tracking-[0.2em]">Aucune demande</div>
+                            <p className="text-neutral-600 text-xs font-bold uppercase tracking-widest">
+                                {leads.length === 0 ? "La base de données est actuellement vide" : "Aucun résultat pour cette recherche"}
+                            </p>
+                        </div>
+                        {leads.length === 0 && (
+                            <button
+                                onClick={fetchLeads}
+                                className="text-gold-500 text-[10px] font-black uppercase tracking-widest hover:text-gold-400 transition-colors"
+                            >
+                                Rafraîchir la connexion
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

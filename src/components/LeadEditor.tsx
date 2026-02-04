@@ -15,10 +15,17 @@ import {
     Download,
     Tag,
     Percent,
-    Coins
+    Coins,
+    Save,
+    Check,
+    Plus,
+    Minus,
+    Wine,
+    Info
 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './PdfDocument';
+import { CHAMPAGNES, EXTRAS, FORMULAS as INITIAL_FORMULAS } from '../lib/data';
 
 interface LeadEditorProps {
     lead: QuoteLead;
@@ -26,55 +33,175 @@ interface LeadEditorProps {
     onUpdate: () => void;
 }
 
+function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['selection'], onChange: (updates: Partial<QuoteLead['selection']>) => void }) {
+    const { formula, options } = selection;
+    const formulas = INITIAL_FORMULAS;
+
+    const handleFormulaSelect = (id: string) => {
+        const selected = formulas.find(f => f.id === id);
+        if (selected) {
+            onChange({ formula: selected });
+        }
+    };
+
+    const updateOptionQuantity = (name: string, delta: number) => {
+        const currentOptions = [...options];
+        const existingIndex = currentOptions.findIndex(o => o.name === name);
+
+        if (existingIndex >= 0) {
+            const newQty = currentOptions[existingIndex].quantity + delta;
+            if (newQty <= 0) {
+                currentOptions.splice(existingIndex, 1);
+            } else {
+                currentOptions[existingIndex] = { ...currentOptions[existingIndex], quantity: newQty, totalTtc: newQty * currentOptions[existingIndex].unitPriceTtc };
+            }
+        } else if (delta > 0) {
+            const catalogItem = [...CHAMPAGNES, ...EXTRAS].find(i => i.name === name);
+            if (catalogItem) {
+                currentOptions.push({ ...catalogItem, quantity: delta, totalTtc: delta * catalogItem.unitPriceTtc, vatRate: catalogItem.vatRate });
+            }
+        }
+        onChange({ options: currentOptions });
+    };
+
+    const getOptionQty = (name: string) => options.find(o => o.name === name)?.quantity || 0;
+
+    return (
+        <div className="space-y-6">
+            <Card className="glass-card p-6 border-none space-y-4">
+                <div className="flex items-center gap-3 border-b border-neutral-100 pb-3">
+                    <Utensils className="w-4 h-4 text-gold-600" />
+                    <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">Choisir une Formule</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {formulas.map(f => {
+                        const isSelected = formula.id === f.id;
+                        return (
+                            <div
+                                key={f.id}
+                                onClick={() => handleFormulaSelect(f.id)}
+                                className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-gold-500 bg-gold-50/20' : 'border-neutral-100 bg-neutral-50/50 hover:border-gold-200'}`}
+                            >
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">{f.type}</span>
+                                    {isSelected && <Check className="w-3 h-3 text-gold-600" />}
+                                </div>
+                                <div className="text-xs font-black text-neutral-900 uppercase truncate">{f.name}</div>
+                                <div className="text-[10px] font-bold text-gold-600">{f.priceTtc}€</div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </Card>
+
+            <Card className="glass-card p-6 border-none space-y-4">
+                <div className="flex items-center gap-3 border-b border-neutral-100 pb-3">
+                    <Wine className="w-4 h-4 text-gold-600" />
+                    <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">Options supplémentaires</h4>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                    {[...CHAMPAGNES, ...EXTRAS].map(item => {
+                        const qty = getOptionQty(item.name);
+                        return (
+                            <div key={item.name} className="flex items-center justify-between p-3 bg-neutral-50/50 rounded-xl border border-neutral-100">
+                                <div className="flex-1 min-w-0 pr-2">
+                                    <div className="text-[10px] font-black text-neutral-900 uppercase truncate">{item.name}</div>
+                                </div>
+                                <div className="flex items-center gap-3 bg-white px-2 py-1 rounded-lg border border-neutral-100">
+                                    <button onClick={() => updateOptionQuantity(item.name, -1)} disabled={qty === 0} className="p-1 hover:text-red-500 disabled:opacity-20">
+                                        <Minus className="w-3 h-3" />
+                                    </button>
+                                    <span className="w-4 text-center text-[11px] font-black">{qty}</span>
+                                    <button onClick={() => updateOptionQuantity(item.name, 1)} className="p-1 hover:text-gold-500">
+                                        <Plus className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </Card>
+        </div>
+    );
+}
+
 export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorProps) {
     const [lead, setLead] = useState<QuoteLead>(initialLead);
+    const [draft, setDraft] = useState<QuoteLead>(initialLead);
     const [newComment, setNewComment] = useState('');
-    const quote = calculateQuoteTotal(lead.selection);
+    const [isSaving, setIsSaving] = useState(false);
+    const quote = calculateQuoteTotal(draft.selection);
 
-    const handleStatusChange = async (newStatus: LeadStatus) => {
-        await LeadStore.updateLead(lead.id, { status: newStatus });
-        setLead(prev => ({ ...prev, status: newStatus }));
-        onUpdate();
+    const handleStatusChange = (newStatus: LeadStatus) => {
+        setDraft(prev => ({ ...prev, status: newStatus }));
     };
 
-    const handleContactChange = async (field: string, value: string | boolean | undefined) => {
-        const updatedSelection = {
-            ...lead.selection,
-            contact: { ...lead.selection.contact, [field]: value }
-        };
-        await LeadStore.updateLead(lead.id, { selection: updatedSelection });
-        setLead(prev => ({ ...prev, selection: updatedSelection }));
-        onUpdate();
+    const handleContactChange = (field: string, value: string | boolean | undefined) => {
+        setDraft(prev => ({
+            ...prev,
+            selection: {
+                ...prev.selection,
+                contact: { ...prev.selection.contact, [field]: value }
+            }
+        }));
     };
 
-    const handleEventChange = async (updates: Partial<QuoteLead['selection']['event']>) => {
-        const updatedSelection = {
-            ...lead.selection,
-            event: { ...lead.selection.event, ...updates }
-        };
-        await LeadStore.updateLead(lead.id, { selection: updatedSelection });
-        setLead(prev => ({ ...prev, selection: updatedSelection }));
-        onUpdate();
+    const handleEventChange = (updates: Partial<QuoteLead['selection']['event']>) => {
+        setDraft(prev => ({
+            ...prev,
+            selection: {
+                ...prev.selection,
+                event: { ...prev.selection.event, ...updates }
+            }
+        }));
     };
 
-    const handleDiscountChange = async (type: 'PERCENT' | 'AMOUNT', value: number) => {
-        const updatedSelection = {
-            ...lead.selection,
-            discount: { type, value }
-        };
-        await LeadStore.updateLead(lead.id, { selection: updatedSelection });
-        setLead(prev => ({ ...prev, selection: updatedSelection }));
-        onUpdate();
+    const handleSelectionChange = (updates: Partial<QuoteLead['selection']>) => {
+        setDraft(prev => ({
+            ...prev,
+            selection: {
+                ...prev.selection,
+                ...updates
+            }
+        }));
     };
 
-    const handleInternalNotesChange = async (value: string) => {
-        const updatedSelection = {
-            ...lead.selection,
-            internalNotes: value
-        };
-        await LeadStore.updateLead(lead.id, { selection: updatedSelection });
-        setLead(prev => ({ ...prev, selection: updatedSelection }));
-        onUpdate();
+    const handleDiscountChange = (type: 'PERCENT' | 'AMOUNT', value: number) => {
+        setDraft(prev => ({
+            ...prev,
+            selection: {
+                ...prev.selection,
+                discount: { type, value }
+            }
+        }));
+    };
+
+    const handleInternalNotesChange = (value: string) => {
+        setDraft(prev => ({
+            ...prev,
+            selection: {
+                ...prev.selection,
+                internalNotes: value
+            }
+        }));
+    };
+
+    const handleSaveChanges = async () => {
+        setIsSaving(true);
+        try {
+            await LeadStore.updateLead(draft.id, {
+                status: draft.status,
+                selection: draft.selection
+            });
+            setLead(draft);
+            onUpdate();
+            alert('Modifications enregistrées !');
+        } catch (error) {
+            console.error(error);
+            alert('Erreur lors de la sauvegarde');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleAddComment = async (e: React.FormEvent) => {
@@ -91,11 +218,11 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
 
     const handleDownload = async () => {
         try {
-            const blob = await pdf(<PdfDocument selection={lead.selection} quote={quote} />).toBlob();
+            const blob = await pdf(<PdfDocument selection={draft.selection} quote={quote} />).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `Devis_REGEN_${lead.id}_${lead.selection.contact.name.replace(/\s+/g, '_')}.pdf`;
+            link.download = `Devis_Faubourg_${draft.id}_${draft.selection.contact.name.replace(/\s+/g, '_')}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -156,7 +283,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Nom Complet</label>
                                 <Input
                                     className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
-                                    value={lead.selection.contact.name}
+                                    value={draft.selection.contact.name}
                                     onChange={e => handleContactChange('name', e.target.value)}
                                 />
                             </div>
@@ -164,7 +291,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Entreprise</label>
                                 <Input
                                     className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
-                                    value={lead.selection.contact.company || ''}
+                                    value={draft.selection.contact.company || ''}
                                     onChange={e => handleContactChange('company', e.target.value)}
                                 />
                             </div>
@@ -172,7 +299,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Email</label>
                                 <Input
                                     className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
-                                    value={lead.selection.contact.email}
+                                    value={draft.selection.contact.email}
                                     onChange={e => handleContactChange('email', e.target.value)}
                                 />
                             </div>
@@ -180,7 +307,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Téléphone</label>
                                 <Input
                                     className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
-                                    value={lead.selection.contact.phone}
+                                    value={draft.selection.contact.phone}
                                     onChange={e => handleContactChange('phone', e.target.value)}
                                 />
                             </div>
@@ -188,7 +315,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Contraintes Alimentaires</label>
                                 <Input
                                     className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
-                                    value={lead.selection.contact.allergies || ''}
+                                    value={draft.selection.contact.allergies || ''}
                                     onChange={e => handleContactChange('allergies', e.target.value)}
                                 />
                             </div>
@@ -207,7 +334,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <Input
                                     type="date"
                                     className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
-                                    value={lead.selection.event.date.toISOString().split('T')[0]}
+                                    value={draft.selection.event.date.toISOString().split('T')[0]}
                                     onChange={e => handleEventChange({ date: new Date(e.target.value) })}
                                 />
                             </div>
@@ -216,17 +343,17 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <Input
                                     type="number"
                                     className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
-                                    value={lead.selection.event.guests}
+                                    value={draft.selection.event.guests}
                                     onChange={e => handleEventChange({ guests: parseInt(e.target.value) || 0 })}
                                 />
                             </div>
-                            {lead.selection.event.service === 'LUNCH' && (
+                            {draft.selection.event.service === 'LUNCH' && (
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Nombre d'Enfants</label>
                                     <Input
                                         type="number"
                                         className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
-                                        value={lead.selection.event.childrenGuests || 0}
+                                        value={draft.selection.event.childrenGuests || 0}
                                         onChange={e => handleEventChange({ childrenGuests: parseInt(e.target.value) || 0 })}
                                     />
                                 </div>
@@ -234,8 +361,19 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                         </div>
                     </Card>
 
+                    {/* Menu and Formula Selection */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-4 border-l-4 border-gold-500 pl-4">
+                            <h3 className="text-lg font-black text-white uppercase tracking-widest">Formules & Options</h3>
+                        </div>
+                        <AdminLeadMenuEditor
+                            selection={draft.selection}
+                            onChange={handleSelectionChange}
+                        />
+                    </div>
+
                     {/* Discount & Internal Notes */}
-                    <Card className="glass-card p-8 border-none space-y-8">
+                    <Card className="glass-card p-8 border-none space-y-8 text-dark-900">
                         <div className="flex items-center gap-4 border-b border-neutral-100 pb-6">
                             <Tag className="w-6 h-6 text-gold-600" />
                             <h3 className="text-lg font-black text-neutral-900 uppercase tracking-widest">Remise & Notes Internes</h3>
@@ -246,15 +384,15 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                     <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Type de Remise</label>
                                     <div className="flex p-1 bg-neutral-100 rounded-xl">
                                         <button
-                                            onClick={() => handleDiscountChange('PERCENT', lead.selection.discount?.value || 0)}
-                                            className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${lead.selection.discount?.type === 'PERCENT' ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                            onClick={() => handleDiscountChange('PERCENT', draft.selection.discount?.value || 0)}
+                                            className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${draft.selection.discount?.type === 'PERCENT' ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
                                         >
                                             <Percent className="w-3 h-3 inline mr-2" />
                                             Pourcentage
                                         </button>
                                         <button
-                                            onClick={() => handleDiscountChange('AMOUNT', lead.selection.discount?.value || 0)}
-                                            className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${lead.selection.discount?.type === 'AMOUNT' ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                            onClick={() => handleDiscountChange('AMOUNT', draft.selection.discount?.value || 0)}
+                                            className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${draft.selection.discount?.type === 'AMOUNT' ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
                                         >
                                             <Coins className="w-3 h-3 inline mr-2" />
                                             Montant Fixe
@@ -267,8 +405,8 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                         type="number"
                                         className="bg-neutral-50 border-neutral-200 text-neutral-900 h-14 rounded-xl focus:bg-white"
                                         placeholder="0"
-                                        value={lead.selection.discount?.value || ''}
-                                        onChange={e => handleDiscountChange(lead.selection.discount?.type || 'PERCENT', parseFloat(e.target.value) || 0)}
+                                        value={draft.selection.discount?.value || ''}
+                                        onChange={e => handleDiscountChange(draft.selection.discount?.type || 'PERCENT', parseFloat(e.target.value) || 0)}
                                     />
                                 </div>
                             </div>
@@ -278,10 +416,21 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <textarea
                                     className="w-full h-32 bg-neutral-50 border border-neutral-200 rounded-xl p-4 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-gold-500 focus:bg-white outline-none transition-all resize-none shadow-sm"
                                     placeholder="Notes sur la négociation, particularités logistiques..."
-                                    value={lead.selection.internalNotes || ''}
+                                    value={draft.selection.internalNotes || ''}
                                     onChange={e => handleInternalNotesChange(e.target.value)}
                                 />
                             </div>
+                        </div>
+
+                        <div className="pt-6 border-t border-neutral-100">
+                            <Button
+                                onClick={handleSaveChanges}
+                                disabled={isSaving}
+                                className="w-full h-16 text-lg font-black gold-gradient text-white gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                                <Save className="w-6 h-6" />
+                                {isSaving ? 'ENREGISTREMENT...' : 'SAUVEGARDER LES MODIFICATIONS'}
+                            </Button>
                         </div>
                     </Card>
                 </div>

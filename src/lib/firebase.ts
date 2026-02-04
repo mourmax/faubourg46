@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,4 +12,13 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+// Force Long Polling to resolve the "client is offline" issue on some networks
+export const db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+});
+
+// Debug logging
+console.log("[Firebase] Protocol: Long Polling Forced");
+console.log("[Firebase] Project ID:", firebaseConfig.projectId);
+if (!firebaseConfig.apiKey) console.error("[Firebase] FATAL: API Key missing!");

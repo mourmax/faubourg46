@@ -34,7 +34,7 @@ export const Input = React.forwardRef<
         <input
             ref={ref}
             className={cn(
-                "flex h-12 w-full rounded-none border-b-2 border-neutral-200 bg-transparent px-0 py-2 text-sm font-sans transition-all focus:border-gold-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-neutral-400 focus:placeholder:text-gold-500/50",
+                "flex h-14 w-full rounded-none border-2 border-neutral-100 bg-white px-4 py-2 text-sm font-sans transition-all duration-300 focus:border-gold-500 focus:bg-white focus:outline-none focus:shadow-[0_0_20px_rgba(212,175,55,0.1)] disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-neutral-400 focus:placeholder:text-gold-500/30",
                 className
             )}
             {...props}

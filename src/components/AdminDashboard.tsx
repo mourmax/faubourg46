@@ -185,13 +185,13 @@ export function AdminDashboard() {
                             <Card className="glass-card p-10 border-none space-y-8">
                                 <div className="flex items-center gap-4 border-b border-white/10 pb-6">
                                     <MessageCircle className="w-6 h-6 text-gold-500" />
-                                    <h3 className="text-xl font-black text-white uppercase tracking-widest">Intégration WhatsApp</h3>
+                                    <h3 className="text-xl font-black text-dark-900 uppercase tracking-widest">Intégration WhatsApp</h3>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/10">
                                         <div>
-                                            <p className="text-white font-black uppercase tracking-widest text-sm">Afficher le bouton Public</p>
+                                            <p className="text-dark-900 font-black uppercase tracking-widest text-sm">Afficher le bouton Public</p>
                                             <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-wider mt-1">Active le bouton flottant sur le formulaire client</p>
                                         </div>
                                         <button

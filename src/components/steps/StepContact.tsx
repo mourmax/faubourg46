@@ -12,10 +12,24 @@ interface StepContactProps {
 
 export function StepContact({ contact, onChange, onNext }: StepContactProps) {
     const { t } = useLanguage();
+    // Utilisation d'un état local pour la saisie afin d'éviter les lags et pertes de caractères
+    const [localContact, setLocalContact] = React.useState(contact);
+
+    // Synchronisation vers le parent avec un délais (debounce) pour éviter les lags
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            onChange(localContact);
+        }, 500); // 500ms de délais
+        return () => clearTimeout(timer);
+    }, [localContact, onChange]);
+
+    const handleLocalChange = (updates: Partial<QuoteSelection['contact']>) => {
+        setLocalContact(prev => ({ ...prev, ...updates }));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (contact.name && contact.email && contact.phone) {
+        if (localContact.name && localContact.email && localContact.phone) {
             onNext();
         }
     };
@@ -32,15 +46,15 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                 <div className="flex p-1 bg-neutral-100 rounded-none border border-neutral-200">
                     <button
                         type="button"
-                        onClick={() => onChange({ isCompany: false })}
-                        className={`flex-1 py-3 px-6 rounded-none text-xs font-black uppercase tracking-widest transition-all ${!contact.isCompany ? 'bg-dark-900 text-white shadow-sm' : 'text-neutral-500 hover:text-dark-900'}`}
+                        onClick={() => handleLocalChange({ isCompany: false })}
+                        className={`flex-1 py-3 px-6 rounded-none text-xs font-black uppercase tracking-widest transition-all ${!localContact.isCompany ? 'bg-dark-900 text-white shadow-sm' : 'text-neutral-500 hover:text-dark-900'}`}
                     >
                         {t.contact.individual}
                     </button>
                     <button
                         type="button"
-                        onClick={() => onChange({ isCompany: true })}
-                        className={`flex-1 py-3 px-6 rounded-none text-xs font-black uppercase tracking-widest transition-all ${contact.isCompany ? 'bg-dark-900 text-white shadow-sm' : 'text-neutral-500 hover:text-dark-900'}`}
+                        onClick={() => handleLocalChange({ isCompany: true })}
+                        className={`flex-1 py-3 px-6 rounded-none text-xs font-black uppercase tracking-widest transition-all ${localContact.isCompany ? 'bg-dark-900 text-white shadow-sm' : 'text-neutral-500 hover:text-dark-900'}`}
                     >
                         {t.contact.pro}
                     </button>
@@ -54,11 +68,12 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                         <div className="relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-300 group-focus-within:text-gold-500 transition-colors" />
                             <Input
+                                id="contact-name"
                                 required
                                 className="pl-12 h-14"
                                 placeholder="Jean Dupont"
-                                value={contact.name}
-                                onChange={e => onChange({ name: e.target.value })}
+                                value={localContact.name}
+                                onChange={e => handleLocalChange({ name: e.target.value })}
                             />
                         </div>
                     </div>
@@ -71,12 +86,13 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-300 group-focus-within:text-gold-500 transition-colors" />
                                 <Input
+                                    id="contact-email"
                                     required
                                     type="email"
                                     className="pl-12 h-14"
                                     placeholder="jean@entreprise.fr"
-                                    value={contact.email}
-                                    onChange={e => onChange({ email: e.target.value })}
+                                    value={localContact.email}
+                                    onChange={e => handleLocalChange({ email: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -88,18 +104,19 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                             <div className="relative">
                                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-300 group-focus-within:text-gold-500 transition-colors" />
                                 <Input
+                                    id="contact-phone"
                                     required
                                     type="tel"
                                     className="pl-12 h-14"
                                     placeholder="06 12 34 56 78"
-                                    value={contact.phone}
-                                    onChange={e => onChange({ phone: e.target.value })}
+                                    value={localContact.phone}
+                                    onChange={e => handleLocalChange({ phone: e.target.value })}
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {contact.isCompany && (
+                    {localContact.isCompany && (
                         <div className="pt-4 border-t border-neutral-100 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="space-y-2 group">
                                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-500 group-focus-within:text-gold-600 transition-colors px-1">
@@ -108,10 +125,11 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                                 <div className="relative">
                                     <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-300 group-focus-within:text-gold-500 transition-colors" />
                                     <Input
+                                        id="contact-company"
                                         className="pl-12 h-14"
                                         placeholder="Faubourg SAS"
-                                        value={contact.company}
-                                        onChange={e => onChange({ company: e.target.value })}
+                                        value={localContact.company}
+                                        onChange={e => handleLocalChange({ company: e.target.value })}
                                     />
                                 </div>
                             </div>
@@ -123,10 +141,11 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                                 <div className="relative">
                                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-300 group-focus-within:text-gold-500 transition-colors" />
                                     <Input
+                                        id="contact-address"
                                         className="pl-12 h-14"
                                         placeholder="123 rue de Paris, 75001 Paris"
-                                        value={contact.address}
-                                        onChange={e => onChange({ address: e.target.value })}
+                                        value={localContact.address}
+                                        onChange={e => handleLocalChange({ address: e.target.value })}
                                     />
                                 </div>
                             </div>
@@ -139,10 +158,11 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                                     <div className="relative">
                                         <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-300 group-focus-within:text-gold-500 transition-colors" />
                                         <Input
+                                            id="contact-vat"
                                             className="pl-12 h-14"
                                             placeholder="FR 12 345678901"
-                                            value={contact.vatNumber}
-                                            onChange={e => onChange({ vatNumber: e.target.value })}
+                                            value={localContact.vatNumber}
+                                            onChange={e => handleLocalChange({ vatNumber: e.target.value })}
                                         />
                                     </div>
                                 </div>
@@ -154,10 +174,11 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                                     <div className="relative">
                                         <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-300 group-focus-within:text-gold-500 transition-colors" />
                                         <Input
+                                            id="contact-ref"
                                             className="pl-12 h-14"
                                             placeholder="REF-2024-001"
-                                            value={contact.internalRef}
-                                            onChange={e => onChange({ internalRef: e.target.value })}
+                                            value={localContact.internalRef}
+                                            onChange={e => handleLocalChange({ internalRef: e.target.value })}
                                         />
                                     </div>
                                 </div>
@@ -171,10 +192,11 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                         </label>
                         <div className="relative">
                             <Input
+                                id="contact-allergies"
                                 className="h-14"
                                 placeholder={t.contact.allergiesPlaceholder}
-                                value={contact.allergies}
-                                onChange={e => onChange({ allergies: e.target.value })}
+                                value={localContact.allergies}
+                                onChange={e => handleLocalChange({ allergies: e.target.value })}
                             />
                         </div>
                     </div>

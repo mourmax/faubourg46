@@ -13,6 +13,19 @@ interface StepServiceProps {
 
 export function StepService({ event, onChange, onNext, onPrev }: StepServiceProps) {
     const { t, language } = useLanguage();
+    const [localEvent, setLocalEvent] = React.useState(event);
+
+    // Sync to parent with debounce
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            onChange(localEvent);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [localEvent, onChange]);
+
+    const handleLocalChange = (updates: Partial<QuoteSelection['event']>) => {
+        setLocalEvent(prev => ({ ...prev, ...updates }));
+    };
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newDate = new Date(e.target.value);
@@ -20,10 +33,10 @@ export function StepService({ event, onChange, onNext, onPrev }: StepServiceProp
         const isNewWeekend = newDay === 5 || newDay === 6;
 
         // If switching to a weekday/Sunday and a seating-specific dinner was selected, switch to full
-        if (!isNewWeekend && (event.service === 'DINNER_1' || event.service === 'DINNER_2')) {
-            onChange({ date: newDate, service: 'DINNER_FULL' });
+        if (!isNewWeekend && (localEvent.service === 'DINNER_1' || localEvent.service === 'DINNER_2')) {
+            handleLocalChange({ date: newDate, service: 'DINNER_FULL' });
         } else {
-            onChange({ date: newDate });
+            handleLocalChange({ date: newDate });
         }
     };
 
@@ -35,7 +48,7 @@ export function StepService({ event, onChange, onNext, onPrev }: StepServiceProp
         }
     };
 
-    const isWeekend = event.date.getDay() === 5 || event.date.getDay() === 6;
+    const isWeekend = localEvent.date.getDay() === 5 || localEvent.date.getDay() === 6;
 
     const serviceLabels: Record<string, any> = {
         LUNCH: { label: t.services.LUNCH, sub: language === 'fr' ? 'Ambiance Brasserie' : 'Brasserie Vibe', icon: Sun },
@@ -86,10 +99,11 @@ export function StepService({ event, onChange, onNext, onPrev }: StepServiceProp
                         </div>
                         <div className="relative overflow-hidden rounded-[2rem] bg-white border-2 border-neutral-100 group-focus-within:border-gold-500 transition-all duration-500 shadow-sm group-focus-within:shadow-xl">
                             <Input
+                                id="event-date"
                                 type="date"
                                 required
                                 className="h-16 border-none bg-transparent pl-6 font-black text-neutral-900 focus:ring-0"
-                                value={formatDate(event.date)}
+                                value={formatDate(localEvent.date)}
                                 onChange={handleDateChange}
                             />
                         </div>
@@ -104,12 +118,13 @@ export function StepService({ event, onChange, onNext, onPrev }: StepServiceProp
                         </div>
                         <div className="relative overflow-hidden rounded-[2rem] bg-white border-2 border-neutral-100 group-focus-within:border-gold-500 transition-all duration-500 shadow-sm group-focus-within:shadow-xl">
                             <Input
+                                id="event-guests"
                                 type="number"
                                 required
                                 min={1}
                                 className="h-16 border-none bg-transparent pl-6 font-black text-neutral-900 focus:ring-0"
-                                value={event.guests}
-                                onChange={e => onChange({ guests: parseInt(e.target.value) || 0 })}
+                                value={localEvent.guests}
+                                onChange={e => handleLocalChange({ guests: parseInt(e.target.value) || 0 })}
                             />
                         </div>
                     </div>
@@ -124,11 +139,12 @@ export function StepService({ event, onChange, onNext, onPrev }: StepServiceProp
                             </div>
                             <div className="relative overflow-hidden rounded-[2rem] bg-white/50 border-2 border-dashed border-neutral-100 group-focus-within:border-gold-400 transition-all duration-500 shadow-sm group-focus-within:shadow-lg">
                                 <Input
+                                    id="event-kids"
                                     type="number"
                                     min={0}
                                     className="h-16 border-none bg-transparent pl-6 font-black text-neutral-900 focus:ring-0"
-                                    value={event.childrenGuests || 0}
-                                    onChange={e => onChange({ childrenGuests: parseInt(e.target.value) || 0 })}
+                                    value={localEvent.childrenGuests || 0}
+                                    onChange={e => handleLocalChange({ childrenGuests: parseInt(e.target.value) || 0 })}
                                 />
                             </div>
                         </div>
@@ -165,7 +181,7 @@ export function StepService({ event, onChange, onNext, onPrev }: StepServiceProp
                                             ? 'border-dark-900 bg-dark-900 text-white shadow-xl'
                                             : 'border-neutral-200 bg-white hover:border-gold-500 hover:text-gold-600'}
                                     `}
-                                    onClick={() => onChange({ service: svc.id as any })}
+                                    onClick={() => handleLocalChange({ service: svc.id as any })}
                                 >
                                     <div className={`
                                         w-12 h-12 flex items-center justify-center transition-all duration-300 mr-4 border
@@ -205,7 +221,7 @@ export function StepService({ event, onChange, onNext, onPrev }: StepServiceProp
                 </Button>
                 <Button
                     onClick={onNext}
-                    disabled={!event.date || !event.guests || !event.service}
+                    disabled={!localEvent.date || !localEvent.guests || !localEvent.service}
                     className="flex-1 max-w-md h-14 text-sm font-black uppercase tracking-widest shadow-xl bg-dark-900 text-white hover:bg-gold-500 hover:border-gold-600 transition-all rounded-none"
                 >
                     {t.common.next}
