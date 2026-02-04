@@ -29,17 +29,20 @@ export function AdminLoginModal({ onClose }: AdminLoginModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-neutral-900/80 flex items-center justify-center p-4 z-[9999] backdrop-blur-md">
-            <Card className="w-full max-w-md p-8 glass-card border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4">
-                    <button onClick={onClose} className="p-2 text-neutral-400 hover:text-neutral-600 transition-colors">
+        <div className="fixed inset-0 bg-dark-900/60 flex items-center justify-center p-4 z-[9999] backdrop-blur-sm">
+            <div className="w-full max-w-md p-10 bg-white rounded-[3rem] shadow-2xl relative overflow-hidden border border-neutral-100">
+                <div className="absolute top-6 right-6">
+                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl bg-neutral-50 text-neutral-400 hover:text-dark-900 transition-all">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="text-center space-y-3 mb-8">
-                    <h1 className="text-3xl font-black gold-text-gradient tracking-tighter">ADMINISTRATION</h1>
-                    <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-[0.3em]">Accès Sécurisé</p>
+                <div className="text-center space-y-3 mb-10">
+                    <div className="w-16 h-16 bg-dark-900 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-dark-900/10">
+                        <LogIn className="w-8 h-8 text-gold-500" />
+                    </div>
+                    <h1 className="text-3xl font-black text-dark-900 tracking-tighter uppercase leading-none">ADMIN</h1>
+                    <p className="text-neutral-400 text-[10px] font-black uppercase tracking-[0.4em]">Accès Sécurisé</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -95,12 +98,11 @@ export function AdminLoginModal({ onClose }: AdminLoginModalProps) {
                         </div>
                     )}
 
-                    <Button type="submit" className="w-full h-16 text-lg font-black gap-3 tracking-widest mt-4">
-                        <LogIn className="w-6 h-6" />
+                    <Button type="submit" className="w-full h-16 text-lg font-black bg-dark-900 text-white hover:bg-gold-500 border-none transition-all shadow-xl shadow-dark-900/10 rounded-2xl tracking-widest mt-4 uppercase">
                         CONNEXION
                     </Button>
                 </form>
-            </Card>
+            </div>
         </div>
     );
 }

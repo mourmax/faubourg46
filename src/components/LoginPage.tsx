@@ -24,16 +24,19 @@ export function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 gold-gradient opacity-10 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 gold-gradient opacity-10 rounded-full blur-3xl animate-pulse delay-700" />
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl animate-pulse delay-700" />
             </div>
 
-            <Card className="w-full max-w-md p-8 glass-card border-none relative z-10">
-                <div className="text-center space-y-3 mb-8">
-                    <h1 className="text-4xl font-black gold-text-gradient tracking-tighter">ADMIN</h1>
-                    <p className="text-neutral-500 text-xs font-bold uppercase tracking-[0.3em]">Accès Sécurisé</p>
+            <div className="w-full max-w-md p-10 bg-white rounded-[3rem] shadow-2xl shadow-dark-900/10 border border-neutral-100 relative z-10">
+                <div className="text-center space-y-3 mb-10">
+                    <div className="w-20 h-20 bg-dark-900 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-dark-900/10">
+                        <LogIn className="w-10 h-10 text-gold-500" />
+                    </div>
+                    <h1 className="text-4xl font-black text-dark-900 tracking-tighter uppercase leading-none">ADMIN</h1>
+                    <p className="text-neutral-400 text-[10px] font-black uppercase tracking-[0.4em]">Accès Sécurisé</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -89,21 +92,20 @@ export function LoginPage() {
                         </div>
                     )}
 
-                    <Button type="submit" className="w-full h-16 text-lg font-black gap-3 tracking-widest mt-4">
-                        <LogIn className="w-6 h-6" />
+                    <Button type="submit" className="w-full h-16 text-lg font-black bg-dark-900 text-white hover:bg-gold-500 border-none transition-all shadow-xl shadow-dark-900/10 rounded-2xl tracking-widest mt-4">
                         CONNEXION
                     </Button>
                 </form>
 
-                <div className="mt-8 text-center">
+                <div className="mt-10 text-center">
                     <button
                         onClick={() => navigate('/')}
-                        className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest hover:text-white transition-colors"
+                        className="text-[10px] text-neutral-400 font-black uppercase tracking-widest hover:text-dark-900 transition-colors"
                     >
-                        Retour au site
+                        Retour au site public
                     </button>
                 </div>
-            </Card>
+            </div>
         </div>
     );
 }

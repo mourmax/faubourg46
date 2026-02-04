@@ -80,8 +80,8 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
             <div className="flex flex-col items-center justify-center py-40 space-y-6">
                 <div className="w-16 h-16 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
                 <div className="text-center space-y-2">
-                    <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs animate-pulse">Chargement des données...</p>
-                    <p className="text-neutral-600 text-[10px] font-bold uppercase tracking-tighter opacity-50">Connexion à Firestore en cours</p>
+                    <p className="text-dark-900 font-black uppercase tracking-[0.2em] text-[10px] animate-pulse">Chargement des demandes...</p>
+                    <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-widest opacity-50">Connexion à Appwrite en cours</p>
                 </div>
             </div>
         );
@@ -89,20 +89,21 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-white/5 p-6 rounded-[2rem] border border-white/10 backdrop-blur-sm">
+            <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-xl shadow-dark-900/5">
                 <div className="relative flex-1 w-full">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                     <Input
                         placeholder="Rechercher par nom, email ou ID..."
-                        className="pl-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-neutral-500 rounded-2xl"
+                        className="pl-12 h-14 bg-neutral-50 border-neutral-100 text-dark-900 font-bold placeholder:text-neutral-400 rounded-2xl focus:ring-4 focus:ring-gold-500/5"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="w-px h-10 bg-neutral-100 mx-2 hidden md:block" />
                     <Filter className="w-5 h-5 text-gold-500 shrink-0" />
                     <select
-                        className="bg-neutral-800 text-white border border-white/10 rounded-xl h-12 px-4 text-xs font-bold uppercase tracking-widest focus:ring-gold-500 outline-none"
+                        className="bg-white text-dark-900 border border-neutral-100 rounded-xl h-14 px-6 text-[10px] font-black uppercase tracking-widest focus:ring-4 focus:ring-gold-500/5 outline-none shadow-sm cursor-pointer"
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value as any)}
                     >
@@ -167,7 +168,12 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                                     <Calendar className="w-3.5 h-3.5 text-gold-500" /> Date
                                                 </div>
                                                 <div className="text-xs font-black text-neutral-900">
-                                                    {lead.selection.event.date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                                                    {(() => {
+                                                        const d = lead.selection?.event?.date;
+                                                        return d instanceof Date && !isNaN(d.getTime())
+                                                            ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+                                                            : 'Date non définie';
+                                                    })()}
                                                 </div>
                                             </div>
                                             <div className="space-y-1">

@@ -1,14 +1,8 @@
-import { db } from './firebase';
-import {
-    doc,
-    getDoc,
-    setDoc,
-    onSnapshot
-} from 'firebase/firestore';
+import { databases, APPWRITE_CONFIG } from './appwrite';
 import type { AppSettings } from './types';
 
-const SETTINGS_COLLECTION = 'settings';
-const GLOBAL_SETTINGS_DOC = 'global';
+const { databaseId, settingsCollectionId } = APPWRITE_CONFIG;
+const GLOBAL_SETTINGS_ID = 'global';
 
 const DEFAULT_SETTINGS: AppSettings = {
     whatsappEnabled: true,
@@ -18,17 +12,26 @@ const DEFAULT_SETTINGS: AppSettings = {
 export const SettingsStore = {
     async getSettings(): Promise<AppSettings> {
         try {
-            const docRef = doc(db, SETTINGS_COLLECTION, GLOBAL_SETTINGS_DOC);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                return docSnap.data() as AppSettings;
-            } else {
-                // Initialize with defaults if doesn't exist
-                await setDoc(docRef, DEFAULT_SETTINGS);
+            const doc = await databases.getDocument(databaseId, settingsCollectionId, GLOBAL_SETTINGS_ID);
+            return {
+                whatsappEnabled: doc.whatsappEnabled,
+                whatsappNumber: doc.whatsappNumber
+            };
+        } catch (e: any) {
+            if (e.code === 404) {
+                // Initialize if not exists
+                try {
+                    await databases.createDocument(
+                        databaseId,
+                        settingsCollectionId,
+                        GLOBAL_SETTINGS_ID,
+                        DEFAULT_SETTINGS
+                    );
+                } catch (err) {
+                    console.error('Failed to create default settings', err);
+                }
                 return DEFAULT_SETTINGS;
             }
-        } catch (e) {
             console.error('Error fetching settings', e);
             return DEFAULT_SETTINGS;
         }
@@ -36,21 +39,21 @@ export const SettingsStore = {
 
     async updateSettings(updates: Partial<AppSettings>): Promise<void> {
         try {
-            const docRef = doc(db, SETTINGS_COLLECTION, GLOBAL_SETTINGS_DOC);
-            await setDoc(docRef, updates, { merge: true });
+            await databases.updateDocument(
+                databaseId,
+                settingsCollectionId,
+                GLOBAL_SETTINGS_ID,
+                updates
+            );
         } catch (e) {
             console.error('Error updating settings', e);
         }
     },
 
     subscribeSettings(callback: (settings: AppSettings) => void) {
-        const docRef = doc(db, SETTINGS_COLLECTION, GLOBAL_SETTINGS_DOC);
-        return onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                callback(docSnap.data() as AppSettings);
-            } else {
-                callback(DEFAULT_SETTINGS);
-            }
-        });
+        // Appwrite Realtime could be used here, but for now we fallback to a fetch
+        this.getSettings().then(callback);
+        // We return a dummy unsubscribe
+        return () => { };
     }
 };

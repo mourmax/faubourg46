@@ -227,59 +227,51 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
             )}
 
             {mode === 'options' && (
-                <div className="relative group/options">
-                    <div className="absolute inset-0 bg-neutral-900 rounded-[4rem] -z-10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden ring-1 ring-white/10">
-                        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_30%,rgba(175,137,54,0.15),transparent_60%)]" />
-                        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-gold-500/10 rounded-full blur-[100px]" />
+                <div className="space-y-6 pb-32">
+                    <div className="flex flex-col md:flex-row justify-between items-end gap-2 border-b border-neutral-200 pb-4">
+                        <div className="space-y-1">
+                            <h3 className="text-lg font-black uppercase tracking-widest text-dark-900">
+                                Options Premium
+                            </h3>
+                            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Sublimer votre événement</p>
+                        </div>
+                        <Wine className="w-8 h-8 text-gold-500 opacity-20" />
                     </div>
 
-                    <div className="p-12 md:p-20 space-y-12">
-                        <div className="flex justify-between items-end border-b border-white/10 pb-10">
-                            <div className="space-y-2">
-                                <h3 className="text-4xl font-black gold-text-gradient tracking-tighter uppercase mb-4">Options Premium</h3>
-                                <div className="flex items-center gap-3">
-                                    <span className="w-16 h-[2px] bg-gradient-to-r from-gold-500 to-transparent" />
-                                    <p className="text-neutral-500 text-[11px] font-black uppercase tracking-[0.4em]">Sublimer votre événement</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {[...CHAMPAGNES, ...EXTRAS].map(item => (
+                            <div key={item.name} className="flex items-center justify-between p-6 bg-white border border-neutral-100 hover:border-gold-300 hover:shadow-xl transition-all duration-300 group/item">
+                                <div className="space-y-1">
+                                    <div className="text-sm font-black text-dark-900 group-hover/item:text-gold-600 transition-colors uppercase tracking-widest">{item.name}</div>
+                                    <div className="flex items-baseline gap-1">
+                                        {item.name === 'DJ' && (event.date.getDay() === 4 || event.date.getDay() === 5 || event.date.getDay() === 6) ? (
+                                            <span className="text-green-600 font-black text-xs uppercase tracking-tighter">Offert</span>
+                                        ) : (
+                                            <>
+                                                <span className="text-gold-600 font-black text-lg">{Math.floor(item.unitPriceTtc)}</span>
+                                                <span className="text-gold-600/70 font-bold text-[10px]">,{(item.unitPriceTtc % 1).toFixed(2).split('.')[1] || '00'} €</span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1 bg-neutral-50 p-1 rounded-lg border border-neutral-100 shadow-inner">
+                                    <button
+                                        className="h-8 w-8 flex items-center justify-center rounded bg-white hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-all disabled:opacity-30 disabled:hover:bg-white active:scale-90 border border-neutral-100/50"
+                                        onClick={() => updateOptionQuantity(item.name, -1)}
+                                        disabled={getOptionQty(item.name) === 0}
+                                    >
+                                        <Minus className="w-4 h-4" />
+                                    </button>
+                                    <span className="w-8 text-center font-black text-xs text-dark-900 tabular-nums">{getOptionQty(item.name)}</span>
+                                    <button
+                                        className="h-8 w-8 flex items-center justify-center rounded bg-white hover:bg-gold-50 text-gold-600 transition-all active:scale-90 border border-neutral-100/50"
+                                        onClick={() => updateOptionQuantity(item.name, 1)}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
-                            <Wine className="w-12 h-12 text-gold-500 opacity-40 animate-pulse" />
-                        </div>
-
-                        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
-                            {[...CHAMPAGNES, ...EXTRAS].map(item => (
-                                <div key={item.name} className="flex flex-col md:flex-row md:items-center justify-between p-6 bg-neutral-900 md:bg-white/[0.03] rounded-[2rem] border border-white/10 hover:border-gold-500/40 hover:bg-white/[0.08] transition-all duration-500 group/item backdrop-blur-sm gap-6 md:gap-0">
-                                    <div className="flex-1 pr-0 md:pr-6 space-y-2 md:space-y-1 text-center md:text-left">
-                                        <div className="text-xl md:text-[13px] font-black text-white group-hover/item:text-gold-400 transition-colors uppercase tracking-widest leading-tight">{item.name}</div>
-                                        <div className="flex justify-center md:justify-start items-baseline gap-2">
-                                            {item.name === 'DJ' && (event.date.getDay() === 4 || event.date.getDay() === 5 || event.date.getDay() === 6) ? (
-                                                <span className="text-green-500 font-black text-2xl uppercase tracking-tighter">Offert</span>
-                                            ) : (
-                                                <>
-                                                    <span className="text-gold-500 font-black text-2xl">{Math.floor(item.unitPriceTtc)}</span>
-                                                    <span className="text-gold-500/70 font-bold text-xs">,{(item.unitPriceTtc % 1).toFixed(2).split('.')[1] || '00'} €</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 shadow-sm justify-center w-full md:w-auto backdrop-blur-md">
-                                        <button
-                                            className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/30 text-white transition-all disabled:opacity-5 disabled:hover:bg-white/5 active:scale-90 border border-white/5"
-                                            onClick={() => updateOptionQuantity(item.name, -1)}
-                                            disabled={getOptionQty(item.name) === 0}
-                                        >
-                                            <Minus className="w-3 h-3" />
-                                        </button>
-                                        <span className="w-6 text-center font-black text-lg text-white tabular-nums">{getOptionQty(item.name)}</span>
-                                        <button
-                                            className="h-7 w-7 flex items-center justify-center rounded-lg bg-gold-500/10 hover:bg-gold-500/40 text-gold-300 transition-all active:scale-90 border border-gold-500/20"
-                                            onClick={() => updateOptionQuantity(item.name, 1)}
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        ))}
                     </div>
                 </div>
             )}

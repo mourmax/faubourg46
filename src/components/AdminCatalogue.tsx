@@ -23,10 +23,10 @@ export function AdminCatalogue({
         <div className="space-y-12 pb-20">
             {/* --- FORMULAS --- */}
             <div className="space-y-6">
-                <h2 className="text-xl font-black text-white uppercase tracking-widest border-l-4 border-gold-500 pl-4">Tarification Formules</h2>
+                <h2 className="text-xl font-black text-dark-900 uppercase tracking-widest border-l-4 border-gold-500 pl-4">Tarification Formules</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {formulas.map(f => (
-                        <Card key={f.id} className="glass-card p-6 border-none hover:ring-2 hover:ring-gold-500/20 transition-all group">
+                        <Card key={f.id} className="bg-white p-8 border border-neutral-100 shadow-xl shadow-dark-900/5 hover:border-gold-300 transition-all group rounded-[2rem]">
                             <div className="space-y-4">
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
@@ -58,12 +58,12 @@ export function AdminCatalogue({
             {/* --- CHAMPAGNES --- */}
             <div className="space-y-6">
                 <div className="flex items-center gap-4 border-l-4 border-gold-500 pl-4">
-                    <h2 className="text-xl font-black text-white uppercase tracking-widest">Champagnes & Vins</h2>
+                    <h2 className="text-xl font-black text-dark-900 uppercase tracking-widest">Champagnes & Vins</h2>
                     <Wine className="w-5 h-5 text-gold-500" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {champagnes.map(item => (
-                        <Card key={item.name} className="glass-card p-5 border-none">
+                        <Card key={item.name} className="bg-white p-6 border border-neutral-100 shadow-lg shadow-dark-900/5 rounded-2xl">
                             <div className="space-y-3">
                                 <div className="text-[11px] font-black text-neutral-900 uppercase tracking-tight leading-tight min-h-[2em]">{item.name}</div>
                                 <div className="space-y-1">
@@ -84,12 +84,12 @@ export function AdminCatalogue({
             {/* --- EXTRAS --- */}
             <div className="space-y-6">
                 <div className="flex items-center gap-4 border-l-4 border-gold-500 pl-4">
-                    <h2 className="text-xl font-black text-white uppercase tracking-widest">Options & Services</h2>
+                    <h2 className="text-xl font-black text-dark-900 uppercase tracking-widest">Options & Services</h2>
                     <PlusCircle className="w-5 h-5 text-gold-500" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {extras.map(item => (
-                        <Card key={item.name} className="glass-card p-5 border-none">
+                        <Card key={item.name} className="bg-white p-6 border border-neutral-100 shadow-lg shadow-dark-900/5 rounded-2xl">
                             <div className="space-y-3">
                                 <div className="text-[11px] font-black text-neutral-900 uppercase tracking-tight">{item.name}</div>
                                 <div className="space-y-1">

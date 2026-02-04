@@ -1,164 +1,117 @@
-import { db } from './firebase';
-import {
-    collection,
-    addDoc,
-    getDocs,
-    updateDoc,
-    doc,
-    deleteDoc,
-    query,
-    orderBy,
-    Timestamp,
-    getDoc
-} from 'firebase/firestore';
+import { databases, APPWRITE_CONFIG } from './appwrite';
+import { ID, Query } from 'appwrite';
 import type { QuoteLead, QuoteSelection, LeadComment } from './types';
 
-const LEADS_COLLECTION = 'leads';
+const { databaseId, leadsCollectionId } = APPWRITE_CONFIG;
 
-// Helper to convert Firestore dates to JS Dates
-const mapLead = (docData: any): QuoteLead => {
+const mapLead = (doc: any): QuoteLead => {
+    let selection = doc.selection;
+    let comments = doc.comments;
+
     try {
-        const data = docData.data();
-        if (!data) throw new Error('Document data is empty');
-
-        return {
-            ...data,
-            id: docData.id,
-            createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt || Date.now()),
-            lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : new Date(data.lastUpdated || Date.now()),
-            selection: {
-                ...data.selection,
-                event: {
-                    ...data.selection.event,
-                    date: data.selection?.event?.date instanceof Timestamp
-                        ? data.selection.event.date.toDate()
-                        : new Date(data.selection?.event?.date || Date.now())
-                }
-            },
-            comments: (data.comments || []).map((c: any) => ({
-                ...c,
-                date: c.date instanceof Timestamp ? c.date.toDate() : new Date(c.date || Date.now())
-            }))
-        };
-    } catch (err) {
-        console.error('Critical Error mapping lead:', docData.id, err);
-        // Return a safe fallback to prevent UI crash
-        return {
-            id: docData.id,
-            status: 'CANCELLED',
-            createdAt: new Date(),
-            lastUpdated: new Date(),
-            comments: [],
-            selection: {
-                contact: { name: 'Error Loading', email: '', phone: '', isCompany: false },
-                event: { date: new Date(), service: 'DINNER_1', guests: 20 },
-                formula: {
-                    id: 'f1',
-                    name: 'Error',
-                    priceTtc: 0,
-                    type: 'TAPAS',
-                    breakdown: { title: 'Error', items: [] }
-                },
-                options: []
-            }
-        } as unknown as QuoteLead;
+        if (typeof selection === 'string') selection = JSON.parse(selection);
+        // CRITICAL: Restore Date objects from strings
+        if (selection?.event?.date && typeof selection.event.date === 'string') {
+            selection.event.date = new Date(selection.event.date);
+        }
+    } catch (e) {
+        console.error('[LeadStore] Failed to parse selection JSON', e);
+        selection = { contact: { name: 'Erreur', email: '', phone: '' }, event: { date: new Date(), guests: 0, service: 'LUNCH' }, formula: { id: '', name: '', type: 'BRASSERIE', priceTtc: 0 }, options: [] };
     }
+
+    try {
+        if (typeof comments === 'string') comments = JSON.parse(comments);
+    } catch (e) {
+        console.error('[LeadStore] Failed to parse comments JSON', e);
+        comments = [];
+    }
+
+    return {
+        ...doc,
+        id: doc.$id,
+        createdAt: doc.createdAt ? new Date(doc.createdAt) : new Date(),
+        lastUpdated: doc.lastUpdated ? new Date(doc.lastUpdated) : new Date(),
+        selection,
+        comments: comments || []
+    };
 };
 
 export const LeadStore = {
-    async getLeads(retryCount = 0): Promise<QuoteLead[]> {
-        console.log(`[LeadStore] Fetching leads (Attempt ${retryCount + 1})...`);
+    async getLeads(): Promise<QuoteLead[]> {
+        console.log('[LeadStore] Fetching leads from Appwrite...');
         try {
-            const leadsRef = collection(db, LEADS_COLLECTION);
-            const q = query(leadsRef, orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
-            console.log(`[LeadStore] Successfully fetched ${querySnapshot.size} leads.`);
-            return querySnapshot.docs.map(mapLead);
-        } catch (e: any) {
-            console.error('[LeadStore] Error fetching leads:', e);
-
-            // Handle offline error with 1 retry
-            if (e?.code === 'unavailable' || (e?.message && e.message.includes('offline')) && retryCount < 1) {
-                console.warn('[LeadStore] Client seems offline, retrying once...');
-                return this.getLeads(retryCount + 1);
-            }
-
-            if (e?.code === 'permission-denied') {
-                console.error('[LeadStore] PERMISSION DENIED: Check Firestore Rules if you updated them.');
-            }
-
-            throw e; // Throw so the UI can catch it and show an error state
+            const response = await databases.listDocuments(
+                databaseId,
+                leadsCollectionId,
+                [Query.orderDesc('createdAt')]
+            );
+            return response.documents.map(mapLead);
+        } catch (e) {
+            console.error('[LeadStore] Error fetching leads', e);
+            throw e;
         }
     },
 
     async saveLead(selection: QuoteSelection): Promise<QuoteLead> {
-        console.log('[LeadStore] Saving new lead...', selection.contact.email);
+        console.log('[LeadStore] Saving lead to Appwrite...');
         try {
-            // Prepare data for Firestore
-            const leadData = {
+            const data = {
                 status: 'NEW',
-                selection: JSON.parse(JSON.stringify(selection)),
-                createdAt: Timestamp.now(),
-                lastUpdated: Timestamp.now(),
-                comments: []
+                selection: JSON.stringify(selection),
+                createdAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString(),
+                comments: JSON.stringify([])
             };
 
-            // Ensure date is a Timestamp
-            leadData.selection.event.date = Timestamp.fromDate(selection.event.date);
-
-            const docRef = await addDoc(collection(db, LEADS_COLLECTION), leadData);
-            console.log('[LeadStore] Lead saved successfully with ID:', docRef.id);
-
-            return {
-                ...leadData,
-                id: docRef.id,
-                createdAt: leadData.createdAt.toDate(),
-                lastUpdated: leadData.lastUpdated.toDate(),
-                selection: {
-                    ...selection,
-                    event: {
-                        ...selection.event,
-                        date: selection.event.date
-                    }
-                },
-                comments: []
-            } as QuoteLead;
+            const response = await databases.createDocument(
+                databaseId,
+                leadsCollectionId,
+                ID.unique(),
+                data
+            );
+            return mapLead(response);
         } catch (e) {
-            console.error('[LeadStore] FATAL: Error saving lead to Firebase', e);
-            throw e; // Rethrow to let the UI handle the failure
+            console.error('[LeadStore] Error saving lead', e);
+            throw e;
         }
     },
 
     async updateLead(id: string, updates: Partial<QuoteLead>): Promise<QuoteLead | null> {
         try {
-            const leadRef = doc(db, LEADS_COLLECTION, id);
-            const firestoreUpdates: any = {
+            const data: any = {
                 ...updates,
-                lastUpdated: Timestamp.now()
+                lastUpdated: new Date().toISOString()
             };
 
-            // Remove id from updates if present
-            delete firestoreUpdates.id;
+            if (updates.selection) data.selection = JSON.stringify(updates.selection);
+            if (updates.comments) data.comments = JSON.stringify(updates.comments);
 
-            await updateDoc(leadRef, firestoreUpdates);
+            // Appwrite doesn't like id in the data object
+            delete data.id;
+            delete data.$id;
+            delete data.$collectionId;
+            delete data.$databaseId;
+            delete data.$createdAt;
+            delete data.$updatedAt;
+            delete data.$permissions;
 
-            // Fetch updated doc to return
-            const updatedDoc = await getDoc(leadRef);
-            return updatedDoc.exists() ? mapLead(updatedDoc) : null;
+            const response = await databases.updateDocument(
+                databaseId,
+                leadsCollectionId,
+                id,
+                data
+            );
+            return mapLead(response);
         } catch (e) {
-            console.error('Error updating lead in Firebase', id, e);
+            console.error('[LeadStore] Error updating lead', e);
             return null;
         }
     },
 
     async addComment(leadId: string, text: string, author: string = 'Admin'): Promise<LeadComment | null> {
         try {
-            const leadRef = doc(db, LEADS_COLLECTION, leadId);
-            const leadDoc = await getDoc(leadRef);
-            if (!leadDoc.exists()) return null;
-
-            const data = leadDoc.data();
-            const comments = data.comments || [];
+            const leadDoc = await databases.getDocument(databaseId, leadsCollectionId, leadId);
+            const comments = JSON.parse(leadDoc.comments || '[]');
 
             const newComment: LeadComment = {
                 id: Math.random().toString(36).substring(2, 9),
@@ -167,30 +120,30 @@ export const LeadStore = {
                 author
             };
 
-            // Prepare for firestore
-            const firestoreComment = {
-                ...newComment,
-                date: Timestamp.fromDate(newComment.date)
-            };
+            comments.push(newComment);
 
-            await updateDoc(leadRef, {
-                comments: [...comments, firestoreComment],
-                lastUpdated: Timestamp.now()
-            });
+            const response = await databases.updateDocument(
+                databaseId,
+                leadsCollectionId,
+                leadId,
+                {
+                    comments: JSON.stringify(comments),
+                    lastUpdated: new Date().toISOString()
+                }
+            );
 
             return newComment;
         } catch (e) {
-            console.error('Error adding comment in Firebase', leadId, e);
+            console.error('[LeadStore] Error adding comment', e);
             return null;
         }
     },
 
     async deleteLead(id: string): Promise<void> {
         try {
-            await deleteDoc(doc(db, LEADS_COLLECTION, id));
+            await databases.deleteDocument(databaseId, leadsCollectionId, id);
         } catch (e) {
-            console.error('Error deleting lead from Firebase', id, e);
+            console.error('[LeadStore] Error deleting lead', e);
         }
     }
 };
-

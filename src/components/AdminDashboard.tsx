@@ -98,31 +98,31 @@ export function AdminDashboard() {
     if (!isAuthenticated) return null;
 
     return (
-        <div className="min-h-screen bg-neutral-900 p-4 md:p-8 flex flex-col items-center">
+        <div className="min-h-screen bg-neutral-50 p-4 md:p-8 flex flex-col items-center">
             {/* Background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 right-1/4 w-[500px] h-[500px] gold-gradient opacity-5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] gold-gradient opacity-5 rounded-full blur-[100px]" />
+                <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-gold-500/5 rounded-full blur-[120px]" />
+                <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-gold-500/5 rounded-full blur-[100px]" />
             </div>
 
             <div className="w-full max-w-6xl space-y-12 relative z-10 pb-20">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-white/10 pb-8 gap-6">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-8 h-8 gold-gradient rounded-lg flex items-center justify-center">
-                                <LayoutDashboard className="w-5 h-5 text-white" />
+                <div className="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-neutral-200 pb-8 gap-6">
+                    <div className="text-center md:text-left">
+                        <div className="flex items-center justify-center md:justify-start gap-4 mb-3">
+                            <div className="w-12 h-12 bg-dark-900 rounded-2xl flex items-center justify-center shadow-xl shadow-dark-900/10">
+                                <LayoutDashboard className="w-6 h-6 text-gold-500" />
                             </div>
-                            <h1 className="text-4xl font-black gold-text-gradient tracking-tighter">DASHBOARD</h1>
+                            <h1 className="text-4xl font-black text-dark-900 tracking-tighter uppercase">DASHBOARD</h1>
                         </div>
-                        <p className="text-neutral-500 font-bold uppercase tracking-[0.2em] text-[10px] text-center md:text-left">Gestion Faubourg 46</p>
+                        <p className="text-neutral-400 font-black uppercase tracking-[0.3em] text-[10px]">Gestion Faubourg 46</p>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5">
+                    <div className="flex flex-wrap items-center justify-center gap-2 bg-white p-2 rounded-2xl shadow-xl shadow-dark-900/5 border border-neutral-100">
                         <button
                             onClick={() => { setCurrentTab('LEADS'); setEditingLead(null); }}
                             className={`flex items-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                ${currentTab === 'LEADS' ? 'gold-gradient text-white shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-white/5'}`}
+                                ${currentTab === 'LEADS' ? 'bg-dark-900 text-white shadow-lg' : 'text-neutral-500 hover:text-dark-900 hover:bg-neutral-50'}`}
                         >
                             <Briefcase className="w-4 h-4" />
                             Demandes
@@ -130,7 +130,7 @@ export function AdminDashboard() {
                         <button
                             onClick={() => { setCurrentTab('CATALOGUE'); setEditingLead(null); }}
                             className={`flex items-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                ${currentTab === 'CATALOGUE' ? 'gold-gradient text-white shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-white/5'}`}
+                                ${currentTab === 'CATALOGUE' ? 'bg-dark-900 text-white shadow-lg' : 'text-neutral-500 hover:text-dark-900 hover:bg-neutral-50'}`}
                         >
                             <Database className="w-4 h-4" />
                             Catalogue
@@ -139,25 +139,25 @@ export function AdminDashboard() {
                         <button
                             onClick={() => { setCurrentTab('SETTINGS'); setEditingLead(null); }}
                             className={`flex items-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                ${currentTab === 'SETTINGS' ? 'gold-gradient text-white shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-white/5'}`}
+                                ${currentTab === 'SETTINGS' ? 'bg-dark-900 text-white shadow-lg' : 'text-neutral-500 hover:text-dark-900 hover:bg-neutral-50'}`}
                         >
                             <Settings className="w-4 h-4" />
                             Réglages
                         </button>
 
-                        <div className="w-px h-8 bg-white/10 mx-2 hidden md:block" />
+                        <div className="w-px h-8 bg-neutral-200 mx-2 hidden md:block" />
 
                         <button
                             onClick={handleCreateLead}
-                            className="flex items-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-white/10 text-white hover:bg-gold-500 hover:shadow-lg border border-white/10"
+                            className="flex items-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-gold-500 text-white hover:bg-gold-600 shadow-xl shadow-gold-500/20"
                         >
-                            <Plus className="w-4 h-4 text-gold-500 group-hover:text-white" />
+                            <Plus className="w-4 h-4" />
                             Nouveau Devis
                         </button>
 
-                        <div className="w-px h-8 bg-white/10 mx-2" />
+                        <div className="w-px h-8 bg-neutral-200 mx-2" />
 
-                        <button onClick={handleLogout} className="p-3 text-neutral-500 hover:text-red-400 transition-colors">
+                        <button onClick={handleLogout} className="p-3 text-neutral-400 hover:text-red-500 transition-colors">
                             <LogOut className="w-5 h-5" />
                         </button>
                     </div>
@@ -182,32 +182,34 @@ export function AdminDashboard() {
                         />
                     ) : currentTab === 'SETTINGS' ? (
                         <div className="max-w-2xl mx-auto space-y-8">
-                            <Card className="glass-card p-10 border-none space-y-8">
-                                <div className="flex items-center gap-4 border-b border-white/10 pb-6">
-                                    <MessageCircle className="w-6 h-6 text-gold-500" />
+                            <div className="bg-white p-10 rounded-[3rem] shadow-2xl shadow-dark-900/5 space-y-8 border border-neutral-100">
+                                <div className="flex items-center gap-4 border-b border-neutral-100 pb-6">
+                                    <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
+                                        <MessageCircle className="w-6 h-6 text-green-600" />
+                                    </div>
                                     <h3 className="text-xl font-black text-dark-900 uppercase tracking-widest">Intégration WhatsApp</h3>
                                 </div>
 
                                 <div className="space-y-6">
-                                    <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/10">
+                                    <div className="flex items-center justify-between p-6 bg-neutral-50 rounded-2xl border border-neutral-100">
                                         <div>
                                             <p className="text-dark-900 font-black uppercase tracking-widest text-sm">Afficher le bouton Public</p>
-                                            <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-wider mt-1">Active le bouton flottant sur le formulaire client</p>
+                                            <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mt-1">Active le bouton flottant sur le formulaire client</p>
                                         </div>
                                         <button
                                             onClick={handleToggleWhatsapp}
-                                            className={`w-16 h-8 rounded-full transition-all relative ${settings?.whatsappEnabled ? 'bg-gold-500' : 'bg-neutral-700'}`}
+                                            className={`w-16 h-8 rounded-full transition-all relative ${settings?.whatsappEnabled ? 'bg-green-500 shadow-lg shadow-green-500/20' : 'bg-neutral-300'}`}
                                         >
                                             <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${settings?.whatsappEnabled ? 'left-9' : 'left-1'}`} />
                                         </button>
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-2">Numéro WhatsApp</label>
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-2">Numéro WhatsApp</label>
                                         <div className="relative">
-                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gold-500 font-black z-10">+</span>
+                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gold-600 font-black z-10">+</span>
                                             <input
-                                                className="w-full h-14 bg-neutral-900 border border-neutral-700 rounded-2xl px-10 text-white font-black focus:border-gold-500 outline-none transition-all placeholder:text-neutral-700"
+                                                className="w-full h-14 bg-white border border-neutral-200 rounded-2xl px-10 text-dark-900 font-black focus:border-gold-500 focus:ring-4 focus:ring-gold-500/5 outline-none transition-all placeholder:text-neutral-300"
                                                 value={settings?.whatsappNumber || ''}
                                                 onChange={(e) => handleUpdateWhatsappNumber(e.target.value)}
                                                 placeholder="336..."
@@ -215,7 +217,7 @@ export function AdminDashboard() {
                                         </div>
                                     </div>
                                 </div>
-                            </Card>
+                            </div>
                         </div>
                     ) : (
                         <AdminLeads key={refreshTrigger} onEdit={setEditingLead} />
