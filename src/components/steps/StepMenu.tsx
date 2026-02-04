@@ -245,10 +245,10 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
                             {[...CHAMPAGNES, ...EXTRAS].map(item => (
-                                <div key={item.name} className="flex items-center justify-between p-8 bg-white/[0.03] rounded-[2.5rem] border border-white/5 hover:border-gold-500/40 hover:bg-white/[0.08] transition-all duration-500 group/item backdrop-blur-sm">
-                                    <div className="flex-1 pr-6 space-y-1">
-                                        <div className="text-[13px] font-black text-white group-hover/item:text-gold-400 transition-colors uppercase tracking-widest leading-tight">{item.name}</div>
-                                        <div className="flex items-baseline gap-2">
+                                <div key={item.name} className="flex flex-col md:flex-row md:items-center justify-between p-6 bg-neutral-900 md:bg-white/[0.03] rounded-[2rem] border border-white/10 hover:border-gold-500/40 hover:bg-white/[0.08] transition-all duration-500 group/item backdrop-blur-sm gap-6 md:gap-0">
+                                    <div className="flex-1 pr-0 md:pr-6 space-y-2 md:space-y-1 text-center md:text-left">
+                                        <div className="text-xl md:text-[13px] font-black text-white group-hover/item:text-gold-400 transition-colors uppercase tracking-widest leading-tight">{item.name}</div>
+                                        <div className="flex justify-center md:justify-start items-baseline gap-2">
                                             {item.name === 'DJ' && (event.date.getDay() === 4 || event.date.getDay() === 5 || event.date.getDay() === 6) ? (
                                                 <span className="text-green-500 font-black text-2xl uppercase tracking-tighter">Offert</span>
                                             ) : (
@@ -259,20 +259,20 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-6 bg-black/60 p-4 rounded-[2rem] border border-white/10 shadow-2xl">
+                                    <div className="flex items-center gap-4 md:gap-6 bg-white/5 md:bg-black/60 p-3 md:p-4 rounded-[1.5rem] md:rounded-[2rem] border border-white/10 shadow-2xl justify-center w-full md:w-auto">
                                         <button
-                                            className="h-12 w-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-red-500/20 text-white hover:text-red-400 transition-all disabled:opacity-10 disabled:hover:bg-white/5"
+                                            className="h-14 w-14 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-white/10 md:bg-white/5 hover:bg-red-500/20 text-white hover:text-red-400 transition-all disabled:opacity-10 disabled:hover:bg-white/5 active:scale-95"
                                             onClick={() => updateOptionQuantity(item.name, -1)}
                                             disabled={getOptionQty(item.name) === 0}
                                         >
-                                            <Minus className="w-6 h-6 stroke-[3]" />
+                                            <Minus className="w-8 h-8 md:w-6 md:h-6 stroke-[3]" />
                                         </button>
-                                        <span className="w-8 text-center font-black text-3xl text-white tabular-nums">{getOptionQty(item.name)}</span>
+                                        <span className="w-12 md:w-8 text-center font-black text-4xl md:text-3xl text-white tabular-nums">{getOptionQty(item.name)}</span>
                                         <button
-                                            className="h-12 w-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-gold-500/30 text-white hover:text-gold-400 transition-all"
+                                            className="h-14 w-14 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-white/10 md:bg-white/5 hover:bg-gold-500/30 text-white hover:text-gold-400 transition-all active:scale-95"
                                             onClick={() => updateOptionQuantity(item.name, 1)}
                                         >
-                                            <Plus className="w-6 h-6 stroke-[3]" />
+                                            <Plus className="w-8 h-8 md:w-6 md:h-6 stroke-[3]" />
                                         </button>
                                     </div>
                                 </div>

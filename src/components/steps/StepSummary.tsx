@@ -1,7 +1,7 @@
 import type { QuoteSelection } from '../../lib/types';
 import { calculateQuoteTotal } from '../../lib/quote-engine';
 import { formatCurrency } from '../../lib/utils';
-import { Download, FileText, Share2, ArrowLeft, Building2, CalendarDays, Users2, ShieldCheck } from 'lucide-react';
+import { Download, FileText, ArrowLeft, Building2, CalendarDays, Users2, ShieldCheck } from 'lucide-react';
 import { Button } from '../ui/components';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from '../PdfDocument';
@@ -165,12 +165,6 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
                                 L'acompte est nécessaire pour verrouiller la privatisation du créneau.
                             </p>
                         </div>
-
-                        <div className="grid grid-cols-1 gap-4">
-                            <button className="w-full h-12 border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/5">
-                                <Share2 className="w-3 h-3" /> Partager l'aperçu
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -194,7 +188,7 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
                 </Button>
                 <Button
                     onClick={handleDownload}
-                    className="flex-1 max-w-md h-14 text-sm font-black uppercase tracking-widest shadow-xl bg-dark-900 text-white hover:bg-gold-500 hover:border-gold-600 transition-all rounded-none gap-2"
+                    className="flex-1 max-w-md h-14 text-sm font-black uppercase tracking-widest shadow-xl bg-gold-500 text-white hover:bg-gold-400 hover:border-gold-500 transition-all rounded-none gap-2 animate-pulse"
                 >
                     <Download className="w-5 h-5" />
                     Télécharger le Devis

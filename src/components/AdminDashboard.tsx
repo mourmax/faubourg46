@@ -44,10 +44,18 @@ export function AdminDashboard() {
     }, [isAuthenticated, navigate]);
 
     const handleToggleWhatsapp = async () => {
-        if (!settings) return;
-        const newStatus = !settings.whatsappEnabled;
+        // Ensure settings exists, default to disabled if not
+        const currentStatus = settings?.whatsappEnabled ?? false;
+        const newStatus = !currentStatus;
+
+        // If settings doesn't exist yet, we create a default object
+        const updatedSettings = {
+            ...(settings || { whatsappNumber: '33600000000' }), // Default dummy number
+            whatsappEnabled: newStatus
+        };
+
         await SettingsStore.updateSettings({ whatsappEnabled: newStatus });
-        setSettings({ ...settings, whatsappEnabled: newStatus });
+        setSettings(updatedSettings);
     };
 
     const handleUpdateWhatsappNumber = async (num: string) => {
@@ -195,11 +203,11 @@ export function AdminDashboard() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-2">Numéro WhatsApp (Format: 336...)</label>
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-2">Numéro WhatsApp</label>
                                         <div className="relative">
-                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gold-500 font-black">+</span>
+                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gold-500 font-black z-10">+</span>
                                             <input
-                                                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-10 text-white font-black focus:border-gold-500 outline-none transition-all"
+                                                className="w-full h-14 bg-neutral-900 border border-neutral-700 rounded-2xl px-10 text-white font-black focus:border-gold-500 outline-none transition-all placeholder:text-neutral-700"
                                                 value={settings?.whatsappNumber || ''}
                                                 onChange={(e) => handleUpdateWhatsappNumber(e.target.value)}
                                                 placeholder="336..."

@@ -28,9 +28,14 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
 
     const fetchLeads = async () => {
         setLoading(true);
-        const data = await LeadStore.getLeads();
-        setLeads(data);
-        setLoading(false);
+        try {
+            const data = await LeadStore.getLeads();
+            setLeads(data);
+        } catch (error) {
+            console.error("Failed to fetch leads", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -69,9 +74,9 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs">Chargement des demandes...</p>
+            <div className="flex flex-col items-center justify-center py-40 space-y-6">
+                <div className="w-16 h-16 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs animate-pulse">Chargement des données...</p>
             </div>
         );
     }

@@ -43,7 +43,7 @@ export function AdminCatalogue({
                                     <div className="relative">
                                         <Input
                                             type="number"
-                                            className="bg-black/5 border-neutral-200 text-neutral-900 h-14 text-xl font-black focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
+                                            className="bg-black/5 border-neutral-200 text-neutral-900 h-14 text-xl font-black focus:border-gold-500 focus:ring-1 focus:ring-gold-500 pl-6"
                                             value={f.priceTtc}
                                             onChange={e => onPriceChange(f.id, parseFloat(e.target.value) || 0)}
                                         />
@@ -107,9 +107,9 @@ export function AdminCatalogue({
                 </div>
             </div>
 
-            <div className="flex justify-end pt-8 border-t border-white/10 sticky bottom-8 bg-neutral-900/80 backdrop-blur-md p-6 rounded-3xl z-50">
-                <Button onClick={onSave} className="gap-4 px-16 h-18 text-xl font-black uppercase tracking-widest shadow-[0_20px_50px_-15px_rgba(197,146,34,0.4)]">
-                    <Save className="w-8 h-8" />
+            <div className="flex justify-end pt-8 sticky bottom-8 p-0 rounded-3xl z-50 pointer-events-none">
+                <Button onClick={onSave} className="gap-4 px-12 h-16 text-lg font-black uppercase tracking-widest shadow-xl gold-gradient pointer-events-auto hover:scale-105 active:scale-95 transition-all">
+                    <Save className="w-6 h-6" />
                     Tout Enregistrer
                 </Button>
             </div>
