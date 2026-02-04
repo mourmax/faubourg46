@@ -13,12 +13,17 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Force Long Polling to resolve the "client is offline" issue on some networks
+// Use auto-detection for protocol (Long Polling vs WebSockets)
+// This is more robust than forcing one or the other
 export const db = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
+    experimentalAutoDetectLongPolling: true,
 });
 
-// Debug logging
-console.log("[Firebase] Protocol: Long Polling Forced");
+console.log("[Firebase] Initialized with Auto-Detect Protocol");
 console.log("[Firebase] Project ID:", firebaseConfig.projectId);
-if (!firebaseConfig.apiKey) console.error("[Firebase] FATAL: API Key missing!");
+function checkApiKey() {
+    if (!firebaseConfig.apiKey) {
+        console.error("[Firebase] FATAL: API Key missing from .env!");
+    }
+}
+checkApiKey();

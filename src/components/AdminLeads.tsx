@@ -23,16 +23,19 @@ interface AdminLeadsProps {
 export function AdminLeads({ onEdit }: AdminLeadsProps) {
     const [leads, setLeads] = useState<QuoteLead[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<LeadStatus | 'ALL'>('ALL');
 
     const fetchLeads = async () => {
         setLoading(true);
+        setError(null);
         try {
             const data = await LeadStore.getLeads();
             setLeads(data);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to fetch leads", error);
+            setError(error?.message || "Erreur de connexion");
         } finally {
             setLoading(false);
         }
@@ -216,20 +219,25 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/5 mb-2">
                             <Search className="w-8 h-8 text-neutral-600" />
                         </div>
-                        <div className="space-y-2">
-                            <div className="text-neutral-500 font-black text-2xl uppercase tracking-[0.2em]">Aucune demande</div>
-                            <p className="text-neutral-600 text-xs font-bold uppercase tracking-widest">
-                                {leads.length === 0 ? "La base de données est actuellement vide" : "Aucun résultat pour cette recherche"}
+                        <div className="space-y-4">
+                            <div className="text-neutral-500 font-black text-2xl uppercase tracking-[0.2em]">
+                                {error ? "Erreur de connexion" : "Aucune demande"}
+                            </div>
+                            <p className="text-neutral-600 text-xs font-bold uppercase tracking-widest max-w-sm mx-auto">
+                                {error
+                                    ? "Le client semble hors ligne ou la connexion à Firestore a échoué. Veuillez vérifier votre connexion internet."
+                                    : (leads.length === 0 ? "La base de données est actuellement vide" : "Aucun résultat pour cette recherche")}
                             </p>
+
+                            {(error || leads.length === 0) && (
+                                <button
+                                    onClick={fetchLeads}
+                                    className="px-8 py-3 bg-gold-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-gold-600 transition-all rounded-full shadow-lg shadow-gold-500/20"
+                                >
+                                    Tenter de se reconnecter
+                                </button>
+                            )}
                         </div>
-                        {leads.length === 0 && (
-                            <button
-                                onClick={fetchLeads}
-                                className="text-gold-500 text-[10px] font-black uppercase tracking-widest hover:text-gold-400 transition-colors"
-                            >
-                                Rafraîchir la connexion
-                            </button>
-                        )}
                     </div>
                 )}
             </div>

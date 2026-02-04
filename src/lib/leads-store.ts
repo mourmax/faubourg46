@@ -66,21 +66,28 @@ const mapLead = (docData: any): QuoteLead => {
 };
 
 export const LeadStore = {
-    async getLeads(): Promise<QuoteLead[]> {
-        console.log('[LeadStore] Fetching leads...');
+    async getLeads(retryCount = 0): Promise<QuoteLead[]> {
+        console.log(`[LeadStore] Fetching leads (Attempt ${retryCount + 1})...`);
         try {
             const leadsRef = collection(db, LEADS_COLLECTION);
             const q = query(leadsRef, orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
             console.log(`[LeadStore] Successfully fetched ${querySnapshot.size} leads.`);
             return querySnapshot.docs.map(mapLead);
-        } catch (e) {
-            console.error('[LeadStore] FATAL: Error fetching leads from Firebase', e);
-            // If it's a permission error, it might be due to rules or auth
-            if (e instanceof Error && e.message.includes('permission-denied')) {
-                console.warn('[LeadStore] Firestore permission denied. Check security rules.');
+        } catch (e: any) {
+            console.error('[LeadStore] Error fetching leads:', e);
+
+            // Handle offline error with 1 retry
+            if (e?.code === 'unavailable' || (e?.message && e.message.includes('offline')) && retryCount < 1) {
+                console.warn('[LeadStore] Client seems offline, retrying once...');
+                return this.getLeads(retryCount + 1);
             }
-            return [];
+
+            if (e?.code === 'permission-denied') {
+                console.error('[LeadStore] PERMISSION DENIED: Check Firestore Rules if you updated them.');
+            }
+
+            throw e; // Throw so the UI can catch it and show an error state
         }
     },
 

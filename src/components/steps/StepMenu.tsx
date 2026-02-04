@@ -159,15 +159,16 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                                     <div
                                         key={f.id}
                                         className={`
-                                            cursor-pointer transition-all duration-300 relative flex flex-col p-8 border-2 group
+                                            cursor-pointer transition-all duration-500 relative flex flex-col p-8 border-2 group
                                             ${isSelected
-                                                ? 'border-gold-500 bg-white shadow-xl scale-[1.01] z-10'
-                                                : 'bg-white border-neutral-200 hover:border-gold-300 hover:shadow-lg hover:-translate-y-1'}
+                                                ? 'border-gold-500 bg-white shadow-2xl scale-[1.02] z-10'
+                                                : 'bg-white border-neutral-100 hover:border-gold-300 hover:shadow-lg hover:-translate-y-1'}
+                                            ${formula.id === 'BRUNCH_ADULT' && f.id === 'BRUNCH_CHILD' ? 'ring-2 ring-gold-200 ring-offset-4 animate-pulse-subtle' : ''}
                                         `}
                                         onClick={() => handleFormulaSelect(f.id)}
                                     >
                                         {isSelected && (
-                                            <div className="absolute top-0 right-0 p-2 bg-gold-500 text-white">
+                                            <div className={`absolute top-0 right-0 p-2 text-white ${f.id === 'BRUNCH_CHILD' ? 'bg-gold-400' : 'bg-gold-500'}`}>
                                                 <Check className="w-6 h-6" />
                                             </div>
                                         )}
@@ -260,20 +261,20 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 bg-white/5 md:bg-black/40 p-2 rounded-2xl border border-white/10 shadow-lg justify-center w-full md:w-auto backdrop-blur-md">
+                                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 shadow-sm justify-center w-full md:w-auto backdrop-blur-md">
                                         <button
-                                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 transition-all disabled:opacity-10 disabled:hover:bg-white/5 active:scale-90"
+                                            className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/30 text-white transition-all disabled:opacity-5 disabled:hover:bg-white/5 active:scale-90 border border-white/5"
                                             onClick={() => updateOptionQuantity(item.name, -1)}
                                             disabled={getOptionQty(item.name) === 0}
                                         >
-                                            <Minus className="w-5 h-5 stroke-[3]" />
+                                            <Minus className="w-3 h-3" />
                                         </button>
-                                        <span className="w-8 text-center font-black text-2xl text-white tabular-nums">{getOptionQty(item.name)}</span>
+                                        <span className="w-6 text-center font-black text-lg text-white tabular-nums">{getOptionQty(item.name)}</span>
                                         <button
-                                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-gold-500/30 text-white hover:text-gold-400 transition-all active:scale-90"
+                                            className="h-7 w-7 flex items-center justify-center rounded-lg bg-gold-500/10 hover:bg-gold-500/40 text-gold-300 transition-all active:scale-90 border border-gold-500/20"
                                             onClick={() => updateOptionQuantity(item.name, 1)}
                                         >
-                                            <Plus className="w-5 h-5 stroke-[3]" />
+                                            <Plus className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </div>
