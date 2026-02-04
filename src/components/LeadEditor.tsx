@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Card, Button, Input } from './ui/components';
+import { Alert } from './ui/Alert';
 import { LeadStore } from '../lib/leads-store';
 import type { QuoteLead, LeadStatus, InvoiceData } from '../lib/types';
 import { formatCurrency } from '../lib/utils';
@@ -128,12 +129,13 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
 }
 
 export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorProps) {
-    const [activeTab, setActiveTab] = useState<'CONTACT' | 'EVENT' | 'MENU' | 'NOTES' | 'INVOICE'>('CONTACT');
+    const [activeTab, setActiveTab] = useState<'CONTACT' | 'EVENT' | 'MENU' | 'NOTES'>('CONTACT');
     const [lead, setLead] = useState<QuoteLead>(initialLead);
     const [draft, setDraft] = useState<QuoteLead>(initialLead);
     const [newComment, setNewComment] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [showInvoiceEditor, setShowInvoiceEditor] = useState(false);
+    const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string } | null>(null);
     const quote = calculateQuoteTotal(draft.selection);
 
     const tabs = [
@@ -141,7 +143,6 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
         { id: 'EVENT', label: 'Événement', icon: Calendar },
         { id: 'MENU', label: 'Formules & Options', icon: Utensils },
         { id: 'NOTES', label: 'Remise & Notes', icon: Tag },
-        { id: 'INVOICE', label: 'Facturation', icon: FileText },
     ] as const;
 
     const handleStatusChange = (newStatus: LeadStatus) => {
@@ -207,10 +208,10 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
             });
             setLead(draft);
             onUpdate();
-            alert('Modifications enregistrées !');
+            setAlertState({ type: 'success', title: 'Modifications enregistrées !', message: 'Les changements ont été sauvegardés avec succès.' });
         } catch (error) {
             console.error(error);
-            alert('Erreur lors de la sauvegarde');
+            setAlertState({ type: 'error', title: 'Erreur de sauvegarde', message: 'Impossible d\'enregistrer les modifications.' });
         } finally {
             setIsSaving(false);
         }
@@ -238,10 +239,10 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
             setLead(prev => ({ ...prev, invoice: invoiceData }));
             setShowInvoiceEditor(false);
             onUpdate();
-            alert('Facture enregistrée !');
+            setAlertState({ type: 'success', title: 'Facture enregistrée !', message: `Facture ${invoiceData.invoiceNumber} créée avec succès.` });
         } catch (error) {
             console.error(error);
-            alert('Erreur lors de la sauvegarde de la facture');
+            setAlertState({ type: 'error', title: 'Erreur de sauvegarde', message: 'Impossible d\'enregistrer la facture.' });
         } finally {
             setIsSaving(false);
         }
@@ -533,90 +534,6 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                             </Card>
                         )}
 
-                        {activeTab === 'INVOICE' && (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                {!draft.invoice && !showInvoiceEditor ? (
-                                    <Card className="bg-white p-12 border-none shadow-xl shadow-dark-900/5 rounded-[2.5rem] text-center space-y-6">
-                                        <FileText className="w-16 h-16 text-gold-500 mx-auto" />
-                                        <div>
-                                            <h3 className="text-lg font-black text-dark-900 uppercase tracking-widest mb-2">Aucune facture</h3>
-                                            <p className="text-sm text-neutral-600">Ce devis n'a pas encore été converti en facture</p>
-                                        </div>
-                                        <Button
-                                            onClick={() => setShowInvoiceEditor(true)}
-                                            className="h-14 px-8 text-sm font-black gold-gradient text-white gap-3 shadow-xl border-none rounded-2xl"
-                                        >
-                                            <Plus className="w-5 h-5" />
-                                            Créer une facture
-                                        </Button>
-                                    </Card>
-                                ) : showInvoiceEditor ? (
-                                    <InvoiceEditor
-                                        existingInvoice={draft.invoice}
-                                        onSave={handleSaveInvoice}
-                                        onCancel={() => setShowInvoiceEditor(false)}
-                                    />
-                                ) : draft.invoice ? (
-                                    <div className="space-y-6">
-                                        <Card className="bg-white p-8 border-none shadow-xl shadow-dark-900/5 rounded-[2.5rem] space-y-6">
-                                            <div className="flex items-center justify-between border-b border-neutral-100 pb-6">
-                                                <div className="flex items-center gap-4">
-                                                    <FileText className="w-6 h-6 text-gold-600" />
-                                                    <div>
-                                                        <h3 className="text-lg font-black text-dark-900 uppercase tracking-widest">Facture {draft.invoice.invoiceNumber}</h3>
-                                                        <p className="text-xs text-neutral-500 mt-1">Date: {draft.invoice.invoiceDate.toLocaleDateString('fr-FR')}</p>
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    onClick={() => setShowInvoiceEditor(true)}
-                                                    className="h-10 px-6 text-[10px] font-black bg-neutral-100 text-neutral-900 hover:bg-neutral-200 border-none"
-                                                >
-                                                    Modifier
-                                                </Button>
-                                            </div>
-
-                                            {draft.invoice.customItems.length > 0 && (
-                                                <div className="space-y-4">
-                                                    <h4 className="text-sm font-black text-dark-900 uppercase tracking-widest">Postes supplémentaires</h4>
-                                                    {draft.invoice.customItems.map(item => (
-                                                        <div key={item.id} className="flex justify-between p-4 bg-neutral-50 rounded-xl">
-                                                            <div>
-                                                                <div className="text-sm font-bold text-neutral-900">{item.description}</div>
-                                                                <div className="text-xs text-neutral-500">Qté: {item.quantity} × {formatCurrency(item.unitPriceHt)} HT (TVA {item.vatRate}%)</div>
-                                                            </div>
-                                                            <div className="text-sm font-black text-neutral-900">{formatCurrency(item.totalTtc)}</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            {draft.invoice.depositReceived && (
-                                                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <div className="text-sm font-black text-green-900">Acompte reçu</div>
-                                                            <div className="text-xs text-green-700 mt-1">
-                                                                {draft.invoice.depositDate?.toLocaleDateString('fr-FR')}
-                                                                {draft.invoice.depositMethod && ` - ${draft.invoice.depositMethod}`}
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-lg font-black text-green-900">{formatCurrency(draft.invoice.depositAmount || 0)}</div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </Card>
-
-                                        <Button
-                                            onClick={handleDownloadInvoice}
-                                            className="w-full h-16 text-sm font-black gold-gradient text-white gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-2xl border-none"
-                                        >
-                                            <Download className="w-5 h-5" />
-                                            Télécharger la facture PDF
-                                        </Button>
-                                    </div>
-                                ) : null}
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -661,6 +578,37 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <Download className="w-5 h-5" />
                                 GÉNÉRER LE PDF
                             </Button>
+
+                            {!draft.invoice ? (
+                                <Button
+                                    onClick={() => setShowInvoiceEditor(true)}
+                                    className="w-full gold-gradient text-white hover:opacity-90 h-14 font-black gap-3 mt-3 border-none shadow-2xl"
+                                >
+                                    <FileText className="w-5 h-5" />
+                                    CRÉER UNE FACTURE
+                                </Button>
+                            ) : (
+                                <div className="mt-4 space-y-3">
+                                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">Facture</div>
+                                        <div className="text-lg font-black text-white">{draft.invoice.invoiceNumber}</div>
+                                        <div className="text-[9px] text-white/70 mt-1">{draft.invoice.invoiceDate.toLocaleDateString('fr-FR')}</div>
+                                    </div>
+                                    <Button
+                                        onClick={handleDownloadInvoice}
+                                        className="w-full bg-white text-dark-900 hover:bg-neutral-100 h-12 font-black gap-3 border-none shadow-xl text-xs"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        PDF FACTURE
+                                    </Button>
+                                    <Button
+                                        onClick={() => setShowInvoiceEditor(true)}
+                                        className="w-full bg-white/10 text-white hover:bg-white/20 h-10 font-black gap-2 border border-white/30 text-[10px]"
+                                    >
+                                        Modifier
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </Card>
 
@@ -707,6 +655,30 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                     </Card>
                 </div>
             </div>
+
+            {/* Invoice Editor Modal */}
+            {showInvoiceEditor && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <InvoiceEditor
+                            existingInvoice={draft.invoice}
+                            quoteSelection={draft.selection}
+                            onSave={handleSaveInvoice}
+                            onCancel={() => setShowInvoiceEditor(false)}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Alert Notification */}
+            {alertState && (
+                <Alert
+                    type={alertState.type}
+                    title={alertState.title}
+                    message={alertState.message}
+                    onClose={() => setAlertState(null)}
+                />
+            )}
         </div>
     );
 }
