@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leads/{leadId} {
+      // For now, allowing public read/write for simplification as requested
+      // but restricted to the leads collection.
+      // In a production environment with Auth, we would check request.auth
+      allow read, write: if true;
+    }
+  }
+}

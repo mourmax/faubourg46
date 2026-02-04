@@ -1,4 +1,4 @@
-import type { FormulaDefinition, QuoteItem } from './types';
+import type { FormulaDefinition, QuoteSelection, QuoteItem } from './types';
 
 // Helper to create price detail
 const createDetail = (
@@ -65,11 +65,16 @@ export const FORMULAS: FormulaDefinition[] = [
     // --- BRASSERIE ---
     {
         id: 'BRASSERIE_PARTIAL',
-        name: 'Brasserie (E/P ou P/D)',
+        name: 'Brasserie (ENTRÉE / PLAT ou PLAT / DESSERT)',
         type: 'BRASSERIE',
         priceTtc: 42.00,
         breakdown: createDetail(29.09, 2.91, 8.33, 1.67),
-        included: ["Entrée + Plat ou Plat + Dessert", "1 bouteille de vin pour 3 personnes"],
+        included: [
+            "Entrée / Plat ou Plat / Dessert au choix",
+            "Ex: Œuf Parfait ou Gravelax de Saumon",
+            "Ex: Suprême de Volaille ou Filet de lieu noir",
+            "1 bouteille de vin pour 3 personnes"
+        ],
         restrictions: {
             days: [0, 1, 2, 3, 4],
             maxGuests: 30
@@ -77,11 +82,15 @@ export const FORMULAS: FormulaDefinition[] = [
     },
     {
         id: 'BRASSERIE_FULL',
-        name: 'Brasserie (E+P+D)',
+        name: 'Brasserie (ENTRÉE + PLAT + DESSERT)',
         type: 'BRASSERIE',
         priceTtc: 55.00,
         breakdown: createDetail(40.91, 4.09, 8.33, 1.67),
-        included: ["Entrée + Plat + Dessert", "1 bouteille de vin pour 3 personnes"],
+        included: [
+            "Entrée + Plat + Dessert au choix",
+            "Ex: Carpaccio de Bœuf, Filet de Bœuf, Brioche Perdue",
+            "1 bouteille de vin pour 3 personnes"
+        ],
         restrictions: {
             days: [0, 1, 2, 3, 4],
             maxGuests: 30
@@ -93,7 +102,11 @@ export const FORMULAS: FormulaDefinition[] = [
         type: 'BRASSERIE',
         priceTtc: 65.00,
         breakdown: createDetail(40.91, 4.09, 16.67, 3.33),
-        included: ["Entrée + Plat + Dessert", "1 bouteille de vin pour 3 personnes", "1 Cocktail"],
+        included: [
+            "Détail : Entrée + Plat + Dessert",
+            "1 bouteille de vin pour 3 personnes",
+            "1 Cocktail sur mesure"
+        ],
         restrictions: {
             days: [0, 1, 2, 3, 4],
             maxGuests: 30
@@ -106,7 +119,12 @@ export const FORMULAS: FormulaDefinition[] = [
         priceTtc: 89.00,
         breakdown: createDetail(40.91, 4.09, 36.67, 7.33),
         description: "Disponible 7/7. Permet de rester sur les deux services le vendredi et samedi à partir de 21h.",
-        included: ["Menu Entrée Plat Dessert", "1 bouteille de vin pour 3 personnes", "3 Cocktails par personne", "Eau pétillante"]
+        included: [
+            "Menu complet Entrée Plat Dessert",
+            "1 bouteille de vin pour 3 personnes",
+            "3 Cocktails par personne",
+            "Eau pétillante & Café"
+        ]
     },
     // --- BRUNCH ---
     {
@@ -115,7 +133,7 @@ export const FORMULAS: FormulaDefinition[] = [
         type: 'BRASSERIE',
         priceTtc: 36.00,
         breakdown: createDetail(32.73, 3.27, 0, 0),
-        included: ["Buffet Brunch à volonté", "Boissons chaudes & jus de fruits"],
+        included: ["Buffet Brunch à volonté", "Boissons chaudes & jus de fruits frais"],
         restrictions: {
             services: ['LUNCH'],
             days: [0, 6] // Dim, Sam
@@ -135,6 +153,23 @@ export const FORMULAS: FormulaDefinition[] = [
     }
 ];
 
+export const INITIAL_SELECTION: QuoteSelection = {
+    contact: {
+        name: '',
+        email: '',
+        phone: '',
+        isCompany: false,
+        company: '',
+        address: '',
+        vatNumber: '',
+        internalRef: '',
+        allergies: ''
+    },
+    event: { date: new Date(), service: 'DINNER_1', guests: 10 },
+    formula: FORMULAS[0],
+    options: []
+};
+
 export const CHAMPAGNES: QuoteItem[] = [
     { name: 'Théophile (75cl)', unitPriceTtc: 85.00, quantity: 0, totalTtc: 0, vatRate: 20 },
     { name: 'Louis Roederer Collection 245 (75cl)', unitPriceTtc: 98.00, quantity: 0, totalTtc: 0, vatRate: 20 },
@@ -148,5 +183,6 @@ export const CHAMPAGNES: QuoteItem[] = [
 ];
 
 export const EXTRAS: QuoteItem[] = [
-    { name: 'DJ', unitPriceTtc: 288.00, quantity: 0, totalTtc: 0, vatRate: 20 } // 240 HT + 20% = 288
+    { name: 'DJ', unitPriceTtc: 288.00, quantity: 0, totalTtc: 0, vatRate: 20 },
+    { name: 'Gâteau d’anniversaire', unitPriceTtc: 0, quantity: 0, totalTtc: 0, vatRate: 10 }
 ];

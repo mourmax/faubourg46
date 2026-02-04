@@ -72,6 +72,12 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                     {selection.contact.internalRef && (
                         <Text style={{ fontSize: 9, color: '#444', marginTop: 4 }}>Réf: {selection.contact.internalRef}</Text>
                     )}
+                    {selection.contact.allergies && (
+                        <View style={{ marginTop: 8, padding: 5, backgroundColor: '#FFF9E6', borderRadius: 2 }}>
+                            <Text style={{ fontSize: 8, fontWeight: 'bold', color: '#B8860B' }}>CONTRAINTES ALIMENTAIRES:</Text>
+                            <Text style={{ fontSize: 8, color: '#444' }}>{selection.contact.allergies}</Text>
+                        </View>
+                    )}
                 </View>
                 <View>
                     <Text style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>DÉTAILS</Text>
@@ -103,7 +109,7 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                 </View>
 
                 {/* Children Formula (Implicitly assumed for Brunch if children > 0) */}
-                {selection.formula.id === 'BRUNCH_ADULT' && selection.event.childrenGuests && selection.event.childrenGuests > 0 && (
+                {selection.formula.id.includes('BRUNCH') && selection.event.childrenGuests && selection.event.childrenGuests > 0 && (
                     <View style={styles.tableRow}>
                         <Text style={styles.colDesc}>Formule: Brunch (Enfant -12 ans)</Text>
                         <Text style={styles.colQty}>{selection.event.childrenGuests}</Text>
@@ -140,17 +146,19 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                     <Text style={styles.totalValue}>{formatCurrency(quote.breakdown.vat20.tva)}</Text>
                 </View>
 
-                <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>TVA Totale</Text>
-                    <Text style={styles.totalValue}>{formatCurrency(quote.totalTva)}</Text>
-                </View>
+                {selection.discount && selection.discount.value > 0 && (
+                    <View style={styles.totalRow}>
+                        <Text style={[styles.totalLabel, { color: '#B8860B' }]}>Remise {selection.discount.type === 'PERCENT' ? `(${selection.discount.value}%)` : ''}</Text>
+                        <Text style={[styles.totalValue, { color: '#B8860B' }]}>-{formatCurrency(selection.discount.type === 'PERCENT' ? (quote.totalTtc / (1 - selection.discount.value / 100)) * (selection.discount.value / 100) : selection.discount.value)}</Text>
+                    </View>
+                )}
 
                 <View style={[styles.totalRow, styles.grandTotal]}>
                     <Text style={[styles.totalLabel, { color: '#B8860B', fontWeight: 'bold' }]}>Total TTC</Text>
                     <Text style={[styles.totalValue, { fontSize: 14 }]}>{formatCurrency(quote.totalTtc)}</Text>
                 </View>
                 <View style={{ marginTop: 10 }}>
-                    <Text style={{ fontSize: 10, fontWeight: 'bold' }}>Acompte 30%: {formatCurrency(quote.deposit)}</Text>
+                    <Text style={{ fontSize: 10, fontWeight: 'bold' }}>Acompte 30% demandé: {formatCurrency(quote.deposit)}</Text>
                 </View>
             </View>
 

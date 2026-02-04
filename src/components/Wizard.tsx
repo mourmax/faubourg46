@@ -1,41 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { QuoteSelection, FormulaDefinition } from '../lib/types';
-import { FORMULAS as INITIAL_FORMULAS } from '../lib/data';
+import type { QuoteSelection, FormulaDefinition, AppSettings } from '../lib/types';
+import { FORMULAS as INITIAL_FORMULAS, INITIAL_SELECTION } from '../lib/data';
 import { StepContact } from './steps/StepContact';
-import { StepService } from './steps/StepService';
 import { StepMenu } from './steps/StepMenu';
 import { StepSummary } from './steps/StepSummary';
 import { Card } from './ui/components';
-import { Globe, Lock } from 'lucide-react';
+import { Globe, Lock, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AdminLoginModal } from './AdminLoginModal';
-
-const INITIAL_SELECTION: QuoteSelection = {
-    contact: { name: '', email: '', phone: '', company: '' },
-    event: { date: new Date(), service: 'DINNER_1', guests: 10 },
-    formula: INITIAL_FORMULAS[0],
-    options: []
-};
+import { StepService } from './steps/StepService';
+import { SettingsStore } from '../lib/settings-store';
 
 export function Wizard() {
     const [step, setStep] = useState(1);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [selection, setSelection] = useState<QuoteSelection>(INITIAL_SELECTION);
+    const [settings, setSettings] = useState<AppSettings | null>(null);
     const [formulas] = useState<FormulaDefinition[]>(() => {
         const saved = localStorage.getItem('faubourg_formulas');
         return saved ? JSON.parse(saved) : INITIAL_FORMULAS;
     });
     const { language, setLanguage, t } = useLanguage();
 
-    const nextStep = () => setStep(s => Math.min(s + 1, 4));
+    useEffect(() => {
+        const unsubscribe = SettingsStore.subscribeSettings(setSettings);
+        return () => unsubscribe();
+    }, []);
+
+    const nextStep = () => setStep(s => Math.min(s + 1, 5));
     const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
     const steps = [
-        { id: 1, label: t.contact.title.split(' ')[0] },
-        { id: 2, label: t.event.title.split(' ')[0] },
+        { id: 1, label: t.steps.contact },
+        { id: 2, label: t.steps.event },
         { id: 3, label: "Menu" },
-        { id: 4, label: "Devis" }
+        { id: 4, label: "Options" },
+        { id: 5, label: "Devis" }
     ];
 
     const updateContact = (contact: Partial<QuoteSelection['contact']>) => {
@@ -155,6 +156,7 @@ export function Wizard() {
                                 )}
                                 {step === 3 && (
                                     <StepMenu
+                                        mode="formulas"
                                         selection={selection}
                                         formulas={formulas}
                                         onChange={(updates) => setSelection(prev => ({ ...prev, ...updates }))}
@@ -163,6 +165,16 @@ export function Wizard() {
                                     />
                                 )}
                                 {step === 4 && (
+                                    <StepMenu
+                                        mode="options"
+                                        selection={selection}
+                                        formulas={formulas}
+                                        onChange={(updates) => setSelection(prev => ({ ...prev, ...updates }))}
+                                        onNext={nextStep}
+                                        onPrev={prevStep}
+                                    />
+                                )}
+                                {step === 5 && (
                                     <StepSummary
                                         selection={selection}
                                         onPrev={prevStep}
@@ -183,6 +195,20 @@ export function Wizard() {
                             &larr; {t.common.prev}
                         </button>
                     </div>
+                )}
+                {/* WhatsApp Floating Button */}
+                {settings?.whatsappEnabled && (
+                    <a
+                        href={`https://api.whatsapp.com/send/?phone=${settings.whatsappNumber}&text&type=phone_number&app_absent=0`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="fixed bottom-8 right-8 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-2xl hover:bg-gold-500 hover:scale-110 transition-all z-50 border border-white/10 group"
+                    >
+                        <MessageCircle className="w-7 h-7" />
+                        <span className="absolute right-full mr-4 bg-black/80 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/5">
+                            Contactez-nous
+                        </span>
+                    </a>
                 )}
             </div>
         </div>

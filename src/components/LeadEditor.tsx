@@ -12,7 +12,10 @@ import {
     MessageSquare,
     Clock,
     Send,
-    Download
+    Download,
+    Tag,
+    Percent,
+    Coins
 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './PdfDocument';
@@ -34,7 +37,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
         onUpdate();
     };
 
-    const handleContactChange = async (field: string, value: string) => {
+    const handleContactChange = async (field: string, value: string | boolean | undefined) => {
         const updatedSelection = {
             ...lead.selection,
             contact: { ...lead.selection.contact, [field]: value }
@@ -44,10 +47,30 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
         onUpdate();
     };
 
-    const handleEventChange = async (updates: any) => {
+    const handleEventChange = async (updates: Partial<QuoteLead['selection']['event']>) => {
         const updatedSelection = {
             ...lead.selection,
             event: { ...lead.selection.event, ...updates }
+        };
+        await LeadStore.updateLead(lead.id, { selection: updatedSelection });
+        setLead(prev => ({ ...prev, selection: updatedSelection }));
+        onUpdate();
+    };
+
+    const handleDiscountChange = async (type: 'PERCENT' | 'AMOUNT', value: number) => {
+        const updatedSelection = {
+            ...lead.selection,
+            discount: { type, value }
+        };
+        await LeadStore.updateLead(lead.id, { selection: updatedSelection });
+        setLead(prev => ({ ...prev, selection: updatedSelection }));
+        onUpdate();
+    };
+
+    const handleInternalNotesChange = async (value: string) => {
+        const updatedSelection = {
+            ...lead.selection,
+            internalNotes: value
         };
         await LeadStore.updateLead(lead.id, { selection: updatedSelection });
         setLead(prev => ({ ...prev, selection: updatedSelection }));
@@ -161,6 +184,14 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                     onChange={e => handleContactChange('phone', e.target.value)}
                                 />
                             </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Contraintes Alimentaires</label>
+                                <Input
+                                    className="bg-neutral-50 border-neutral-200 text-neutral-900 h-12 rounded-xl focus:bg-white"
+                                    value={lead.selection.contact.allergies || ''}
+                                    onChange={e => handleContactChange('allergies', e.target.value)}
+                                />
+                            </div>
                         </div>
                     </Card>
 
@@ -200,6 +231,57 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                     />
                                 </div>
                             )}
+                        </div>
+                    </Card>
+
+                    {/* Discount & Internal Notes */}
+                    <Card className="glass-card p-8 border-none space-y-8">
+                        <div className="flex items-center gap-4 border-b border-neutral-100 pb-6">
+                            <Tag className="w-6 h-6 text-gold-600" />
+                            <h3 className="text-lg font-black text-neutral-900 uppercase tracking-widest">Remise & Notes Internes</h3>
+                        </div>
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Type de Remise</label>
+                                    <div className="flex p-1 bg-neutral-100 rounded-xl">
+                                        <button
+                                            onClick={() => handleDiscountChange('PERCENT', lead.selection.discount?.value || 0)}
+                                            className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${lead.selection.discount?.type === 'PERCENT' ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                        >
+                                            <Percent className="w-3 h-3 inline mr-2" />
+                                            Pourcentage
+                                        </button>
+                                        <button
+                                            onClick={() => handleDiscountChange('AMOUNT', lead.selection.discount?.value || 0)}
+                                            className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${lead.selection.discount?.type === 'AMOUNT' ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                        >
+                                            <Coins className="w-3 h-3 inline mr-2" />
+                                            Montant Fixe
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Valeur de la Remise</label>
+                                    <Input
+                                        type="number"
+                                        className="bg-neutral-50 border-neutral-200 text-neutral-900 h-14 rounded-xl focus:bg-white"
+                                        placeholder="0"
+                                        value={lead.selection.discount?.value || ''}
+                                        onChange={e => handleDiscountChange(lead.selection.discount?.type || 'PERCENT', parseFloat(e.target.value) || 0)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-600 ml-2">Commentaires Internes (Visible uniquement admin)</label>
+                                <textarea
+                                    className="w-full h-32 bg-neutral-50 border border-neutral-200 rounded-xl p-4 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-gold-500 focus:bg-white outline-none transition-all resize-none shadow-sm"
+                                    placeholder="Notes sur la négociation, particularités logistiques..."
+                                    value={lead.selection.internalNotes || ''}
+                                    onChange={e => handleInternalNotesChange(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </Card>
                 </div>

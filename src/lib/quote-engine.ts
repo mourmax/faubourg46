@@ -68,7 +68,17 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
                 }
             }
 
-            const lineTtc = unitPrice * qty;
+            // Birthday Cake logic
+            if (opt.name === 'Gâteau d’anniversaire') {
+                if (formula.type === 'BRASSERIE') {
+                    unitPrice = 0;
+                } else if (formula.type === 'TAPAS') {
+                    // 4.50€ per person
+                    unitPrice = 4.50;
+                }
+            }
+
+            const lineTtc = unitPrice * (opt.name === 'Gâteau d’anniversaire' ? guestCount : qty);
             optionsTotalTtc += lineTtc;
 
             // Calculate HT and TVA from TTC based on rate
@@ -87,14 +97,30 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
     });
 
     // Grand Totals
-    const totalTtc = formulaTotalTtc + optionsTotalTtc;
-    const totalHt = formulaHt10 + formulaHt20 + optionsHt10 + optionsHt20;
-    const totalTva = formulaTva10 + formulaTva20 + optionsTva10 + optionsTva20;
+    let totalTtc = formulaTotalTtc + optionsTotalTtc;
+    let totalHt = formulaHt10 + formulaHt20 + optionsHt10 + optionsHt20;
 
-    const totalHt10 = formulaHt10 + optionsHt10;
-    const totalTva10 = formulaTva10 + optionsTva10;
-    const totalHt20 = formulaHt20 + optionsHt20;
-    const totalTva20 = formulaTva20 + optionsTva20;
+    // Apply Discount
+    let discountAmount = 0;
+    if (selection.discount) {
+        if (selection.discount.type === 'PERCENT') {
+            discountAmount = totalTtc * (selection.discount.value / 100);
+        } else {
+            discountAmount = selection.discount.value;
+        }
+    }
+
+    const discountFactor = totalTtc > 0 ? (totalTtc - discountAmount) / totalTtc : 1;
+
+    totalTtc = Math.max(0, totalTtc - discountAmount);
+
+    const totalHt10 = (formulaHt10 + optionsHt10) * discountFactor;
+    const totalTva10 = (formulaTva10 + optionsTva10) * discountFactor;
+    const totalHt20 = (formulaHt20 + optionsHt20) * discountFactor;
+    const totalTva20 = (formulaTva20 + optionsTva20) * discountFactor;
+
+    totalHt = totalHt10 + totalHt20;
+    const totalTva = totalTva10 + totalTva20;
 
     // Deposit (30%)
     const deposit = totalTtc * 0.3;

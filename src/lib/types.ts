@@ -53,10 +53,12 @@ export interface QuoteSelection {
         name: string;
         email: string;
         phone: string;
+        isCompany: boolean;
         company?: string;
         address?: string;
         internalRef?: string;
         vatNumber?: string;
+        allergies?: string;
     };
     event: {
         date: Date;
@@ -66,6 +68,11 @@ export interface QuoteSelection {
     };
     formula: FormulaDefinition;
     options: QuoteItem[];
+    discount?: {
+        type: 'PERCENT' | 'AMOUNT';
+        value: number;
+    };
+    internalNotes?: string;
 }
 
 export interface QuoteLead {
@@ -75,4 +82,8 @@ export interface QuoteLead {
     createdAt: Date;
     comments: LeadComment[];
     lastUpdated: Date;
+}
+export interface AppSettings {
+    whatsappEnabled: boolean;
+    whatsappNumber: string;
 }
