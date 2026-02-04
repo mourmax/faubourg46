@@ -7,6 +7,7 @@ const { databaseId, leadsCollectionId } = APPWRITE_CONFIG;
 const mapLead = (doc: any): QuoteLead => {
     let selection = doc.selection;
     let comments = doc.comments;
+    let invoice = doc.invoice;
 
     try {
         if (typeof selection === 'string') selection = JSON.parse(selection);
@@ -26,13 +27,28 @@ const mapLead = (doc: any): QuoteLead => {
         comments = [];
     }
 
+    try {
+        if (typeof invoice === 'string') invoice = JSON.parse(invoice);
+        // Restore Date objects in invoice
+        if (invoice?.invoiceDate && typeof invoice.invoiceDate === 'string') {
+            invoice.invoiceDate = new Date(invoice.invoiceDate);
+        }
+        if (invoice?.depositDate && typeof invoice.depositDate === 'string') {
+            invoice.depositDate = new Date(invoice.depositDate);
+        }
+    } catch (e) {
+        console.error('[LeadStore] Failed to parse invoice JSON', e);
+        invoice = undefined;
+    }
+
     return {
         ...doc,
         id: doc.$id,
         createdAt: doc.createdAt ? new Date(doc.createdAt) : new Date(),
         lastUpdated: doc.lastUpdated ? new Date(doc.lastUpdated) : new Date(),
         selection,
-        comments: comments || []
+        comments: comments || [],
+        invoice
     };
 };
 
@@ -85,6 +101,7 @@ export const LeadStore = {
 
             if (updates.selection) data.selection = JSON.stringify(updates.selection);
             if (updates.comments) data.comments = JSON.stringify(updates.comments);
+            if (updates.invoice) data.invoice = JSON.stringify(updates.invoice);
 
             // Appwrite doesn't like id in the data object
             delete data.id;

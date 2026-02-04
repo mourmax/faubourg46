@@ -121,11 +121,16 @@ export function StepService({ event, onChange, onNext, onPrev }: StepServiceProp
                                 id="event-guests"
                                 type="number"
                                 required
-                                min={1}
+                                min={9}
                                 className="h-16 border-none bg-transparent pl-6 font-black text-neutral-900 focus:ring-0"
                                 value={localEvent.guests}
-                                onChange={e => handleLocalChange({ guests: parseInt(e.target.value) || 0 })}
+                                onChange={e => handleLocalChange({ guests: parseInt(e.target.value) || 9 })}
                             />
+                        </div>
+                        <div className="p-3 bg-gold-50 border border-gold-200 rounded-xl">
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-gold-800">
+                                ⚠️ Minimum 9 personnes pour les réservations de groupe
+                            </p>
                         </div>
                     </div>
 

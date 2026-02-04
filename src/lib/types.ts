@@ -82,7 +82,30 @@ export interface QuoteLead {
     createdAt: Date;
     comments: LeadComment[];
     lastUpdated: Date;
+    invoice?: InvoiceData;
 }
+
+export interface CustomLineItem {
+    id: string;
+    description: string;
+    quantity: number;
+    unitPriceHt: number;
+    vatRate: VatRate;
+    totalHt: number;
+    totalTva: number;
+    totalTtc: number;
+}
+
+export interface InvoiceData {
+    invoiceNumber: string;
+    invoiceDate: Date;
+    customItems: CustomLineItem[];
+    depositReceived: boolean;
+    depositAmount?: number;
+    depositDate?: Date;
+    depositMethod?: string;
+}
+
 export interface AppSettings {
     whatsappEnabled: boolean;
     whatsappNumber: string;
