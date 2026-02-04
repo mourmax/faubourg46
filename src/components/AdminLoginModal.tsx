@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Button, Input } from './ui/components';
+import { Button, Input } from './ui/components';
 import { Mail, Lock, LogIn, AlertCircle, X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';

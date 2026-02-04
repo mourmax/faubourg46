@@ -122,7 +122,7 @@ export const LeadStore = {
 
             comments.push(newComment);
 
-            const response = await databases.updateDocument(
+            await databases.updateDocument(
                 databaseId,
                 leadsCollectionId,
                 leadId,

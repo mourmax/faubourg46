@@ -10,7 +10,7 @@ import { AdminLeads } from './AdminLeads';
 import { LeadEditor } from './LeadEditor';
 import { LeadStore } from '../lib/leads-store';
 import { SettingsStore } from '../lib/settings-store';
-import { Card } from './ui/components';
+// Removed unused Card import
 
 export function AdminDashboard() {
     const { isAuthenticated, logout } = useAuth();
