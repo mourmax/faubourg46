@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input, Button } from '../ui/components';
 import type { QuoteSelection } from '../../lib/types';
-import { Calendar, Users, Clock, ArrowRight, ArrowLeft, Sun, Moon, Stars, Zap, Info, Check } from 'lucide-react';
+import { Calendar, Users, Clock, ArrowRight, ArrowLeft, Sun, Moon, Stars, Zap, Info } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface StepServiceProps {

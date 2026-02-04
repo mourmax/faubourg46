@@ -134,7 +134,6 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
 
                                 if (!available) {
                                     return (
-                                    return (
                                         <div
                                             key={f.id}
                                             className="relative flex flex-col p-6 bg-neutral-50 border border-neutral-200 opacity-60 grayscale blur-[0.5px] group/locked overflow-hidden"
