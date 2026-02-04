@@ -72,7 +72,8 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
     };
 
     const handleFormulaSelect = (id: string) => {
-        const selected = formulas.find(f => f.id === id);
+        const targetId = (id === 'BRUNCH_CHILD') ? 'BRUNCH_ADULT' : id;
+        const selected = formulas.find(f => f.id === targetId);
         if (selected && getAvailabilityStatus(selected).available) {
             onChange({ formula: selected });
         }
@@ -130,7 +131,7 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                             })
                             .map(f => {
                                 const { available, reason } = getAvailabilityStatus(f);
-                                const isSelected = formula.id === f.id;
+                                const isSelected = formula.id === f.id || (formula.id === 'BRUNCH_ADULT' && f.id === 'BRUNCH_CHILD' && event.childrenGuests && event.childrenGuests > 0);
 
                                 if (!available) {
                                     return (
@@ -259,20 +260,20 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4 md:gap-6 bg-white/5 md:bg-black/60 p-3 md:p-4 rounded-[1.5rem] md:rounded-[2rem] border border-white/10 shadow-2xl justify-center w-full md:w-auto">
+                                    <div className="flex items-center gap-3 bg-white/5 md:bg-black/40 p-2 rounded-2xl border border-white/10 shadow-lg justify-center w-full md:w-auto backdrop-blur-md">
                                         <button
-                                            className="h-14 w-14 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-white/10 md:bg-white/5 hover:bg-red-500/20 text-white hover:text-red-400 transition-all disabled:opacity-10 disabled:hover:bg-white/5 active:scale-95"
+                                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 transition-all disabled:opacity-10 disabled:hover:bg-white/5 active:scale-90"
                                             onClick={() => updateOptionQuantity(item.name, -1)}
                                             disabled={getOptionQty(item.name) === 0}
                                         >
-                                            <Minus className="w-8 h-8 md:w-6 md:h-6 stroke-[3]" />
+                                            <Minus className="w-5 h-5 stroke-[3]" />
                                         </button>
-                                        <span className="w-12 md:w-8 text-center font-black text-4xl md:text-3xl text-white tabular-nums">{getOptionQty(item.name)}</span>
+                                        <span className="w-8 text-center font-black text-2xl text-white tabular-nums">{getOptionQty(item.name)}</span>
                                         <button
-                                            className="h-14 w-14 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-white/10 md:bg-white/5 hover:bg-gold-500/30 text-white hover:text-gold-400 transition-all active:scale-95"
+                                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-gold-500/30 text-white hover:text-gold-400 transition-all active:scale-90"
                                             onClick={() => updateOptionQuantity(item.name, 1)}
                                         >
-                                            <Plus className="w-8 h-8 md:w-6 md:h-6 stroke-[3]" />
+                                            <Plus className="w-5 h-5 stroke-[3]" />
                                         </button>
                                     </div>
                                 </div>
