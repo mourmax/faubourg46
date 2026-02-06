@@ -140,7 +140,26 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                                 Menu
                             </h3>
                         </div>
+                        <div className="flex flex-col items-end">
+                            <div className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Total Formules</div>
+                            <div className={`text-sm font-black transition-colors ${(selection.formulas || []).reduce((sum, f) => sum + f.quantity, 0) !== event.guests
+                                    ? 'text-red-500'
+                                    : 'text-green-600'
+                                }`}>
+                                {(selection.formulas || []).reduce((sum, f) => sum + f.quantity, 0)} / {event.guests} convives
+                            </div>
+                        </div>
                     </div>
+
+                    {/* Warning if mismatch */}
+                    {(selection.formulas || []).reduce((sum, f) => sum + f.quantity, 0) !== event.guests && (
+                        <div className="p-4 bg-red-50 rounded-xl border-2 border-red-200 flex items-center gap-3 animate-pulse">
+                            <Info className="w-5 h-5 text-red-500 shrink-0" />
+                            <p className="text-xs font-bold text-red-600 uppercase tracking-wide">
+                                Attention: Le nombre de formules ({(selection.formulas || []).reduce((sum, f) => sum + f.quantity, 0)}) ne correspond pas au nombre de convives ({event.guests}).
+                            </p>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         {[...formulas]
@@ -277,39 +296,67 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {[...CHAMPAGNES, ...EXTRAS].map(item => (
-                            <div key={item.name} className="flex items-center justify-between p-6 bg-white border border-neutral-100 hover:border-gold-300 hover:shadow-xl transition-all duration-300 group/item">
-                                <div className="space-y-1">
-                                    <div className="text-sm font-black text-dark-900 group-hover/item:text-gold-600 transition-colors uppercase tracking-widest">{item.name}</div>
-                                    <div className="flex items-baseline gap-1">
-                                        {item.name === 'DJ' && (event.date.getDay() === 4 || event.date.getDay() === 5 || event.date.getDay() === 6) ? (
-                                            <span className="text-green-600 font-black text-xs uppercase tracking-tighter">Offert</span>
-                                        ) : (
-                                            <>
-                                                <span className="text-gold-600 font-black text-lg">{Math.floor(item.unitPriceTtc)}</span>
-                                                <span className="text-gold-600/70 font-bold text-[10px]">,{(item.unitPriceTtc % 1).toFixed(2).split('.')[1] || '00'} €</span>
-                                            </>
+                        {[...CHAMPAGNES, ...EXTRAS].map(item => {
+                            const qty = getOptionQty(item.name);
+                            const guestCount = event.guests;
+
+                            let hint = "";
+                            let hintColor = "text-neutral-400";
+
+                            if (item.name.includes("Café")) {
+                                hint = `Recommandé: ${guestCount} (1/pers)`;
+                            } else if (item.name.includes("Eau")) {
+                                const btlQty = Math.ceil(guestCount / 2);
+                                hint = `Recommandé: ${btlQty} btl (1 bouteille pour 2 pers)`;
+                                if (qty > 0 && qty !== btlQty) {
+                                    hintColor = "text-orange-500";
+                                }
+                            } else if (item.name.includes("Gâteau")) {
+                                hint = `Prix par personne - Quantité = nombre total de convives (${guestCount})`;
+                                if (qty > 0 && qty !== guestCount) {
+                                    hintColor = "text-red-500 font-extrabold";
+                                }
+                            }
+
+                            return (
+                                <div key={item.name} className="flex items-center justify-between p-6 bg-white border border-neutral-100 hover:border-gold-300 hover:shadow-xl transition-all duration-300 group/item">
+                                    <div className="space-y-1 flex-1 min-w-0 pr-3">
+                                        <div className="text-sm font-black text-dark-900 group-hover/item:text-gold-600 transition-colors uppercase tracking-widest">{item.name}</div>
+                                        <div className="flex items-baseline gap-1">
+                                            {item.name === 'DJ' && (event.date.getDay() === 4 || event.date.getDay() === 5 || event.date.getDay() === 6) ? (
+                                                <span className="text-green-600 font-black text-xs uppercase tracking-tighter">Offert</span>
+                                            ) : (
+                                                <>
+                                                    <span className="text-gold-600 font-black text-lg">{Math.floor(item.unitPriceTtc)}</span>
+                                                    <span className="text-gold-600/70 font-bold text-[10px]">,{(item.unitPriceTtc % 1).toFixed(2).split('.')[1] || '00'} €</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        {hint && (
+                                            <div className={`text-[9px] font-black uppercase tracking-tight ${hintColor} border-t border-neutral-100 pt-1.5 mt-1.5`}>
+                                                💡 {hint}
+                                            </div>
                                         )}
                                     </div>
+                                    <div className="flex items-center gap-1 bg-neutral-50 p-1 rounded-lg border border-neutral-100 shadow-inner">
+                                        <button
+                                            className="h-8 w-8 flex items-center justify-center rounded bg-white hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-all disabled:opacity-30 disabled:hover:bg-white active:scale-90 border border-neutral-100/50"
+                                            onClick={() => updateOptionQuantity(item.name, -1)}
+                                            disabled={qty === 0}
+                                        >
+                                            <Minus className="w-4 h-4" />
+                                        </button>
+                                        <span className="w-8 text-center font-black text-xs text-dark-900 tabular-nums">{qty}</span>
+                                        <button
+                                            className="h-8 w-8 flex items-center justify-center rounded bg-white hover:bg-gold-50 text-gold-600 transition-all active:scale-90 border border-neutral-100/50"
+                                            onClick={() => updateOptionQuantity(item.name, 1)}
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1 bg-neutral-50 p-1 rounded-lg border border-neutral-100 shadow-inner">
-                                    <button
-                                        className="h-8 w-8 flex items-center justify-center rounded bg-white hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-all disabled:opacity-30 disabled:hover:bg-white active:scale-90 border border-neutral-100/50"
-                                        onClick={() => updateOptionQuantity(item.name, -1)}
-                                        disabled={getOptionQty(item.name) === 0}
-                                    >
-                                        <Minus className="w-4 h-4" />
-                                    </button>
-                                    <span className="w-8 text-center font-black text-xs text-dark-900 tabular-nums">{getOptionQty(item.name)}</span>
-                                    <button
-                                        className="h-8 w-8 flex items-center justify-center rounded bg-white hover:bg-gold-50 text-gold-600 transition-all active:scale-90 border border-neutral-100/50"
-                                        onClick={() => updateOptionQuantity(item.name, 1)}
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -325,8 +372,13 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                 </Button>
                 <Button
                     onClick={onNext}
-                    disabled={mode === 'formulas' && !formula.id}
-                    className="flex-1 max-w-md h-14 text-sm font-black uppercase tracking-widest shadow-xl bg-dark-900 text-white hover:bg-gold-500 hover:border-gold-600 transition-all rounded-none"
+                    disabled={
+                        mode === 'formulas' && (
+                            !formula.id ||
+                            (selection.formulas || []).reduce((sum, f) => sum + f.quantity, 0) !== event.guests
+                        )
+                    }
+                    className="flex-1 max-w-md h-14 text-sm font-black uppercase tracking-widest shadow-xl bg-dark-900 text-white hover:bg-gold-500 hover:border-gold-600 transition-all rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {t.common.next}
                     <ArrowRight className="w-5 h-5 ml-2" />

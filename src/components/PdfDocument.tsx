@@ -165,6 +165,16 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                         <Text style={styles.colTotal}>{formatCurrency(selection.customItem.priceTtc)}</Text>
                     </View>
                 )}
+
+                {/* Supplementary Options (Champagnes, Extras) */}
+                {selection.options && selection.options.length > 0 && selection.options.map((option, idx) => (
+                    <View key={`option-${idx}`} style={styles.tableRow}>
+                        <Text style={styles.colDesc}>Option: {option.name}</Text>
+                        <Text style={styles.colQty}>{option.quantity}</Text>
+                        <Text style={styles.colPrice}>{formatCurrency(option.unitPriceTtc)}</Text>
+                        <Text style={styles.colTotal}>{formatCurrency(option.totalTtc)}</Text>
+                    </View>
+                ))}
             </View>
 
             {/* Totals */}
