@@ -116,7 +116,7 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                 </View>
 
                 {/* Formulas */}
-                {selection.formulas.map((sf, idx) => (
+                {(selection.formulas || []).map((sf, idx) => (
                     <View key={`formula-${idx}`} style={[styles.tableRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
                         <View style={{ flexDirection: 'row' }}>
                             <Text style={[styles.colDesc, { fontWeight: 'bold' }]}>Formule: {sf.formula.name}</Text>

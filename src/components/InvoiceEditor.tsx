@@ -20,7 +20,7 @@ export function InvoiceEditor({ existingInvoice, quoteSelection, onSave, onCance
         const quoteItems: CustomLineItem[] = [];
 
         // Add formulas
-        quoteSelection.formulas.forEach(sf => {
+        (quoteSelection.formulas || []).forEach(sf => {
             if (sf.quantity <= 0) return;
             const priceTtc = sf.customPrice !== undefined ? sf.customPrice : sf.formula.priceTtc;
             const priceHt = priceTtc / 1.1; // Standard 10% VAT assumption for formulas in invoice

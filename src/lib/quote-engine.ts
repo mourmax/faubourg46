@@ -25,7 +25,7 @@ export const isFestiveRequired = (date: Date, service: string): boolean => {
 };
 
 export const calculateQuoteTotal = (selection: QuoteSelection) => {
-    const { formulas, options, event, agencyCommission } = selection;
+    const { formulas = [], options = [], event, agencyCommission, formula: legacyFormula } = selection;
 
     // Totals accumulation
     let totalTtc = 0;
@@ -34,8 +34,14 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
     let totalHt20 = 0;
     let totalTva20 = 0;
 
+    // Handle legacy single-formula leads
+    const effectiveFormulas = [...formulas];
+    if (effectiveFormulas.length === 0 && legacyFormula) {
+        effectiveFormulas.push({ formula: legacyFormula, quantity: event.guests || 0 });
+    }
+
     // 1. Process Formulas
-    formulas.forEach(sf => {
+    effectiveFormulas.forEach(sf => {
         const { formula, quantity, customPrice } = sf;
         if (quantity <= 0) return;
 
