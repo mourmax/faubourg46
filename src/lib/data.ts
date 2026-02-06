@@ -153,7 +153,7 @@ export const FORMULAS: FormulaDefinition[] = [
     },
     {
         id: 'PLAT_DU_JOUR',
-        name: 'Formule Plat du Jour',
+        name: 'PLAT DU JOUR+ DESSERT',
         type: 'BRASSERIE',
         priceTtc: 26.00,
         breakdown: createDetail(23.64, 2.36, 0, 0), // 10% VAT

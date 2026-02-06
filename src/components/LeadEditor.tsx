@@ -192,7 +192,7 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
                             const btlQty = Math.ceil(guestCount / 2);
                             hint = `Conseillé: ${btlQty} (1 btl pour 2 pers)`;
                         } else if (item.name.includes("Gâteau")) {
-                            hint = "4,5€/pers pour toute la table";
+                            hint = `Conseillé: ${guestCount} (4,5€/pers)`;
                         }
 
                         return (
