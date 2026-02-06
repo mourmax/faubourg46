@@ -18,7 +18,6 @@ import {
     Percent,
     Coins,
     Save,
-    Check,
     Plus,
     Minus,
     Wine,
@@ -37,14 +36,47 @@ interface LeadEditorProps {
 }
 
 function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['selection'], onChange: (updates: Partial<QuoteLead['selection']>) => void }) {
-    const { formula, options } = selection;
+    const { formulas: selectedFormulas = [], options, formula: primaryFormula } = selection;
     const formulas = INITIAL_FORMULAS;
 
-    const handleFormulaSelect = (id: string) => {
-        const selected = formulas.find(f => f.id === id);
-        if (selected) {
-            onChange({ formula: selected });
+    const handleFormulaQuantity = (id: string, delta: number) => {
+        const currentFormulas = [...selectedFormulas];
+        const existingIndex = currentFormulas.findIndex(f => f.formula.id === id);
+
+        if (existingIndex >= 0) {
+            const newQty = currentFormulas[existingIndex].quantity + delta;
+            if (newQty <= 0) {
+                currentFormulas.splice(existingIndex, 1);
+            } else {
+                currentFormulas[existingIndex] = { ...currentFormulas[existingIndex], quantity: newQty };
+            }
+        } else if (delta > 0) {
+            const def = formulas.find(f => f.id === id);
+            if (def) {
+                currentFormulas.push({ formula: def, quantity: delta });
+            }
         }
+
+        onChange({
+            formulas: currentFormulas,
+            formula: currentFormulas.length > 0 ? currentFormulas[0].formula : primaryFormula
+        });
+    };
+
+    const handleCustomPrice = (id: string, price: number) => {
+        const currentFormulas = selectedFormulas.map(sf => {
+            if (sf.formula.id === id) {
+                return { ...sf, customPrice: price === sf.formula.priceTtc ? undefined : price };
+            }
+            return sf;
+        });
+        onChange({ formulas: currentFormulas });
+    };
+
+    const getFormulaQty = (id: string) => selectedFormulas.find(f => f.formula.id === id)?.quantity || 0;
+    const getFormulaPrice = (id: string) => {
+        const sf = selectedFormulas.find(f => f.formula.id === id);
+        return sf?.customPrice !== undefined ? sf.customPrice : (formulas.find(f => f.id === id)?.priceTtc || 0);
     };
 
     const updateOptionQuantity = (name: string, delta: number) => {
@@ -74,23 +106,48 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
             <Card className="glass-card p-6 border-none space-y-4">
                 <div className="flex items-center gap-3 border-b border-neutral-100 pb-3">
                     <Utensils className="w-4 h-4 text-gold-600" />
-                    <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">Choisir une Formule</h4>
+                    <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">Choisir les Formules</h4>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                     {formulas.map(f => {
-                        const isSelected = formula.id === f.id;
+                        const qty = getFormulaQty(f.id);
+                        const isSelected = qty > 0;
+                        const price = getFormulaPrice(f.id);
+
                         return (
                             <div
                                 key={f.id}
-                                onClick={() => handleFormulaSelect(f.id)}
-                                className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-gold-500 bg-gold-50/20' : 'border-neutral-100 bg-neutral-50/50 hover:border-gold-200'}`}
+                                className={`p-4 border-2 rounded-xl transition-all ${isSelected ? 'border-gold-500 bg-gold-50/20' : 'border-neutral-100 bg-neutral-50/50'}`}
                             >
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">{f.type}</span>
-                                    {isSelected && <Check className="w-3 h-3 text-gold-600" />}
+                                <div className="flex justify-between items-center mb-2">
+                                    <div>
+                                        <div className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">{f.type}</div>
+                                        <div className="text-xs font-black text-neutral-900 uppercase">{f.name}</div>
+                                    </div>
+                                    <div className="flex items-center gap-3 bg-white px-2 py-1 rounded-lg border border-neutral-100">
+                                        <button onClick={() => handleFormulaQuantity(f.id, -1)} disabled={qty === 0} className="p-1 hover:text-red-500 disabled:opacity-20">
+                                            <Minus className="w-3 h-3" />
+                                        </button>
+                                        <span className="w-4 text-center text-[11px] font-black">{qty}</span>
+                                        <button onClick={() => handleFormulaQuantity(f.id, 1)} className="p-1 hover:text-gold-500">
+                                            <Plus className="w-3 h-3" />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="text-xs font-black text-neutral-900 uppercase truncate">{f.name}</div>
-                                <div className="text-[10px] font-bold text-gold-600">{f.priceTtc}€</div>
+
+                                {isSelected && (
+                                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gold-200/50">
+                                        <label className="text-[9px] font-black text-gold-700 uppercase">Prix Pers. (€)</label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            className="w-20 bg-white border border-gold-200 rounded px-2 py-1 text-[10px] font-bold outline-none focus:border-gold-500"
+                                            value={price}
+                                            onChange={(e) => handleCustomPrice(f.id, parseFloat(e.target.value) || 0)}
+                                        />
+                                        <span className="text-[9px] text-neutral-400">(Standard: {f.priceTtc}€)</span>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
@@ -109,6 +166,7 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
                             <div key={item.name} className="flex items-center justify-between p-3 bg-neutral-50/50 rounded-xl border border-neutral-100">
                                 <div className="flex-1 min-w-0 pr-2">
                                     <div className="text-[10px] font-black text-neutral-900 uppercase truncate">{item.name}</div>
+                                    <div className="text-[9px] font-bold text-gold-600">{item.unitPriceTtc}€</div>
                                 </div>
                                 <div className="flex items-center gap-3 bg-white px-2 py-1 rounded-lg border border-neutral-100">
                                     <button onClick={() => updateOptionQuantity(item.name, -1)} disabled={qty === 0} className="p-1 hover:text-red-500 disabled:opacity-20">
@@ -517,6 +575,38 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                                 placeholder="0"
                                                 value={draft.selection.discount?.value || ''}
                                                 onChange={e => handleDiscountChange(draft.selection.discount?.type || 'PERCENT', parseFloat(e.target.value) || 0)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-neutral-100">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Commission Agence</label>
+                                            <div className="flex p-1.5 bg-neutral-100 rounded-2xl">
+                                                <button
+                                                    onClick={() => setDraft(prev => ({ ...prev, selection: { ...prev.selection, agencyCommission: { type: 'PERCENT', value: prev.selection.agencyCommission?.value || 0 } } }))}
+                                                    className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${draft.selection.agencyCommission?.type === 'PERCENT' ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                                >
+                                                    <Percent className="w-3 h-3 inline mr-2" />
+                                                    %
+                                                </button>
+                                                <button
+                                                    onClick={() => setDraft(prev => ({ ...prev, selection: { ...prev.selection, agencyCommission: { type: 'FIXED', value: prev.selection.agencyCommission?.value || 0 } } }))}
+                                                    className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${draft.selection.agencyCommission?.type === 'FIXED' ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                                >
+                                                    <Coins className="w-3 h-3 inline mr-2" />
+                                                    Fixe
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Valeur Commission</label>
+                                            <Input
+                                                type="number"
+                                                className="bg-neutral-50 border-neutral-100 text-neutral-900 h-16 rounded-2xl focus:bg-white focus:border-gold-500"
+                                                placeholder="0"
+                                                value={draft.selection.agencyCommission?.value || ''}
+                                                onChange={e => setDraft(prev => ({ ...prev, selection: { ...prev.selection, agencyCommission: { type: prev.selection.agencyCommission?.type || 'PERCENT', value: parseFloat(e.target.value) || 0 } } }))}
                                             />
                                         </div>
                                     </div>

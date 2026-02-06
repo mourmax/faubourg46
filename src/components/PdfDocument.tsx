@@ -115,27 +115,50 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                     <Text style={[styles.colTotal, { fontWeight: 'bold' }]}>Total TTC</Text>
                 </View>
 
-                {/* Formula */}
-                <View style={styles.tableRow}>
-                    <Text style={styles.colDesc}>Formule: {selection.formula.name} {selection.event.childrenGuests ? '(Adulte)' : ''}</Text>
-                    <Text style={styles.colQty}>{selection.event.guests}</Text>
-                    <Text style={styles.colPrice}>{formatCurrency(selection.formula.priceTtc)}</Text>
-                    <Text style={styles.colTotal}>{formatCurrency(selection.formula.priceTtc * selection.event.guests)}</Text>
-                </View>
+                {/* Formulas */}
+                {selection.formulas.map((sf, idx) => (
+                    <View key={`formula-${idx}`} style={[styles.tableRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
+                        <View style={{ flexDirection: 'row' }}>
+                            <Text style={[styles.colDesc, { fontWeight: 'bold' }]}>Formule: {sf.formula.name}</Text>
+                            <Text style={styles.colQty}>{sf.quantity}</Text>
+                            <Text style={styles.colPrice}>{formatCurrency(sf.customPrice ?? sf.formula.priceTtc)}</Text>
+                            <Text style={styles.colTotal}>{formatCurrency((sf.customPrice ?? sf.formula.priceTtc) * sf.quantity)}</Text>
+                        </View>
+                        {sf.formula.included && sf.formula.included.length > 0 && (
+                            <View style={{ marginLeft: 10, marginTop: 4 }}>
+                                <Text style={{ fontSize: 8, color: '#666', fontStyle: 'italic' }}>
+                                    Inclus: {sf.formula.included.join(', ')}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                ))}
 
-                {/* Children Formula (Implicitly assumed for Brunch if children > 0) */}
-                {selection.formula.id.includes('BRUNCH') && selection.event.childrenGuests && selection.event.childrenGuests > 0 && (
+                {/* If no formulas (legacy or empty), show the single formula if it exists */}
+                {selection.formulas.length === 0 && selection.formula && (
                     <View style={styles.tableRow}>
-                        <Text style={styles.colDesc}>Formule: Brunch (Enfant -12 ans)</Text>
-                        <Text style={styles.colQty}>{selection.event.childrenGuests}</Text>
-                        <Text style={styles.colPrice}>{formatCurrency(16.00)}</Text>
-                        <Text style={styles.colTotal}>{formatCurrency(16.00 * selection.event.childrenGuests)}</Text>
+                        <Text style={styles.colDesc}>Formule: {selection.formula.name}</Text>
+                        <Text style={styles.colQty}>{selection.event.guests}</Text>
+                        <Text style={styles.colPrice}>{formatCurrency(selection.formula.priceTtc)}</Text>
+                        <Text style={styles.colTotal}>{formatCurrency(selection.formula.priceTtc * selection.event.guests)}</Text>
                     </View>
                 )}
 
+                {/* Children Formula (Implicitly assumed for Brunch if children > 0 and not explicitly added) */}
+                {selection.formulas.some(sf => sf.formula.id.includes('BRUNCH')) &&
+                    !selection.formulas.some(sf => sf.formula.id === 'BRUNCH_CHILD') &&
+                    selection.event.childrenGuests && selection.event.childrenGuests > 0 && (
+                        <View style={styles.tableRow}>
+                            <Text style={styles.colDesc}>Formule: Brunch (Enfant -12 ans)</Text>
+                            <Text style={styles.colQty}>{selection.event.childrenGuests}</Text>
+                            <Text style={styles.colPrice}>{formatCurrency(16.00)}</Text>
+                            <Text style={styles.colTotal}>{formatCurrency(16.00 * selection.event.childrenGuests)}</Text>
+                        </View>
+                    )}
+
                 {/* Options */}
                 {selection.options.map((opt, i) => (
-                    <View key={i} style={styles.tableRow}>
+                    <View key={`option-${i}`} style={styles.tableRow}>
                         <Text style={styles.colDesc}>{opt.name}</Text>
                         <Text style={styles.colQty}>{opt.quantity}</Text>
                         <Text style={styles.colPrice}>{formatCurrency(opt.unitPriceTtc)}</Text>
@@ -165,6 +188,13 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                     <View style={styles.totalRow}>
                         <Text style={[styles.totalLabel, { color: '#B8860B' }]}>Remise {selection.discount.type === 'PERCENT' ? `(${selection.discount.value}%)` : ''}</Text>
                         <Text style={[styles.totalValue, { color: '#B8860B' }]}>-{formatCurrency(selection.discount.type === 'PERCENT' ? (quote.totalTtc / (1 - selection.discount.value / 100)) * (selection.discount.value / 100) : selection.discount.value)}</Text>
+                    </View>
+                )}
+
+                {quote.commissionAmount > 0 && (
+                    <View style={styles.totalRow}>
+                        <Text style={[styles.totalLabel, { color: '#B8860B' }]}>Commission Agence {selection.agencyCommission?.type === 'PERCENT' ? `(${selection.agencyCommission.value}%)` : ''}</Text>
+                        <Text style={[styles.totalValue, { color: '#B8860B' }]}>{formatCurrency(quote.commissionAmount)}</Text>
                     </View>
                 )}
 

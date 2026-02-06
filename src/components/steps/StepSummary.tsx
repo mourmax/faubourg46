@@ -108,9 +108,20 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
 
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2 text-[10px] font-black text-gold-600 uppercase tracking-widest">
-                                        <ShieldCheck className="w-3.5 h-3.5" /> Formule
+                                        <ShieldCheck className="w-3.5 h-3.5" /> Formule{selection.formulas.length > 1 ? 's' : ''}
                                     </div>
-                                    <div className="text-2xl font-black text-neutral-900 leading-tight uppercase tracking-tighter">{formula.name}</div>
+                                    <div className="flex flex-col gap-1">
+                                        {selection.formulas.map((sf, idx) => (
+                                            <div key={idx} className="text-2xl font-black text-neutral-900 leading-tight uppercase tracking-tighter">
+                                                {sf.quantity}x {sf.formula.name}
+                                            </div>
+                                        ))}
+                                        {selection.formulas.length === 0 && (
+                                            <div className="text-2xl font-black text-neutral-900 leading-tight uppercase tracking-tighter">
+                                                {formula.name}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

@@ -28,8 +28,15 @@ export function Wizard() {
         return () => unsubscribe();
     }, []);
 
-    const nextStep = () => setStep(s => Math.min(s + 1, 5));
-    const prevStep = () => setStep(s => Math.max(s - 1, 1));
+    const nextStep = () => {
+        setStep(s => Math.min(s + 1, 5));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const prevStep = () => {
+        setStep(s => Math.max(s - 1, 1));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     const steps = [
         { id: 1, label: t.steps.contact },

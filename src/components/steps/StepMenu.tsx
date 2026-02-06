@@ -71,13 +71,33 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
         return { available: true };
     };
 
-    const handleFormulaSelect = (id: string) => {
+    const handleFormulaSelect = (id: string, delta: number) => {
         const targetId = (id === 'BRUNCH_CHILD') ? 'BRUNCH_ADULT' : id;
-        const selected = formulas.find(f => f.id === targetId);
-        if (selected && getAvailabilityStatus(selected).available) {
-            onChange({ formula: selected });
+        const selectedDef = formulas.find(f => f.id === targetId);
+
+        if (!selectedDef || !getAvailabilityStatus(selectedDef).available) return;
+
+        const currentFormulas = [...(selection.formulas || [])];
+        const existingIndex = currentFormulas.findIndex(f => f.formula.id === id);
+
+        if (existingIndex >= 0) {
+            const newQty = currentFormulas[existingIndex].quantity + delta;
+            if (newQty <= 0) {
+                currentFormulas.splice(existingIndex, 1);
+            } else {
+                currentFormulas[existingIndex] = { ...currentFormulas[existingIndex], quantity: newQty };
+            }
+        } else if (delta > 0) {
+            currentFormulas.push({ formula: formulas.find(f => f.id === id)!, quantity: delta });
         }
+
+        // Backward compatibility for components still using selection.formula
+        const primaryFormula = currentFormulas.length > 0 ? currentFormulas[0].formula : selection.formula;
+
+        onChange({ formulas: currentFormulas, formula: primaryFormula });
     };
+
+    const getFormulaQty = (id: string) => (selection.formulas || []).find(f => f.formula.id === id)?.quantity || 0;
 
     const updateOptionQuantity = (name: string, delta: number) => {
         const currentOptions = [...options];
@@ -93,7 +113,7 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
         } else if (delta > 0) {
             const catalogItem = [...CHAMPAGNES, ...EXTRAS].find(i => i.name === name);
             if (catalogItem) {
-                currentOptions.push({ ...catalogItem, quantity: delta, totalTtc: delta * catalogItem.unitPriceTtc, vatRate: 20 });
+                currentOptions.push({ ...catalogItem, quantity: delta, totalTtc: delta * catalogItem.unitPriceTtc, vatRate: catalogItem.vatRate });
             }
         }
         onChange({ options: currentOptions });
@@ -131,7 +151,8 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                             })
                             .map(f => {
                                 const { available, reason } = getAvailabilityStatus(f);
-                                const isSelected = formula.id === f.id || (formula.id === 'BRUNCH_ADULT' && f.id === 'BRUNCH_CHILD' && event.childrenGuests && event.childrenGuests > 0);
+                                const qty = getFormulaQty(f.id);
+                                const isSelected = qty > 0;
 
                                 if (!available) {
                                     return (
@@ -159,16 +180,14 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                                     <div
                                         key={f.id}
                                         className={`
-                                            cursor-pointer transition-all duration-500 relative flex flex-col p-8 border-2 group
+                                            transition-all duration-500 relative flex flex-col p-8 border-2 group
                                             ${isSelected
                                                 ? 'border-gold-500 bg-white shadow-2xl scale-[1.02] z-10'
                                                 : 'bg-white border-neutral-100 hover:border-gold-300 hover:shadow-lg hover:-translate-y-1'}
-                                            ${formula.id === 'BRUNCH_ADULT' && f.id === 'BRUNCH_CHILD' ? 'ring-2 ring-gold-200 ring-offset-4 animate-pulse-subtle' : ''}
                                         `}
-                                        onClick={() => handleFormulaSelect(f.id)}
                                     >
                                         {isSelected && (
-                                            <div className={`absolute top-0 right-0 p-2 text-white ${f.id === 'BRUNCH_CHILD' ? 'bg-gold-400' : 'bg-gold-500'}`}>
+                                            <div className={`absolute top-0 right-0 p-2 text-white bg-gold-500`}>
                                                 <Check className="w-6 h-6" />
                                             </div>
                                         )}
@@ -183,11 +202,30 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                                             </h4>
                                         </div>
 
-                                        <div className="flex items-center gap-3 mb-12">
-                                            <div className="text-6xl font-black gold-text-gradient drop-shadow-sm">{Math.floor(f.priceTtc)}</div>
-                                            <div className="flex flex-col">
-                                                <span className="text-2xl font-black gold-text-gradient">,{(f.priceTtc % 1).toFixed(2).split('.')[1] || '00'} €</span>
-                                                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">/ Convive</span>
+                                        <div className="flex items-center justify-between mb-8">
+                                            <div className="flex items-center gap-3">
+                                                <div className="text-6xl font-black gold-text-gradient drop-shadow-sm">{Math.floor(f.priceTtc)}</div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-2xl font-black gold-text-gradient">,{(f.priceTtc % 1).toFixed(2).split('.')[1] || '00'} €</span>
+                                                    <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">/ Convive</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 bg-neutral-50 p-2 rounded-xl border border-neutral-100 shadow-inner">
+                                                <button
+                                                    className="h-10 w-10 flex items-center justify-center rounded bg-white hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-all disabled:opacity-30 disabled:hover:bg-white active:scale-90 border border-neutral-100/50"
+                                                    onClick={() => handleFormulaSelect(f.id, -1)}
+                                                    disabled={qty === 0}
+                                                >
+                                                    <Minus className="w-5 h-5" />
+                                                </button>
+                                                <span className="w-10 text-center font-black text-lg text-dark-900 tabular-nums">{qty}</span>
+                                                <button
+                                                    className="h-10 w-10 flex items-center justify-center rounded bg-white hover:bg-gold-50 text-gold-600 transition-all active:scale-90 border border-neutral-100/50"
+                                                    onClick={() => handleFormulaSelect(f.id, 1)}
+                                                >
+                                                    <Plus className="w-5 h-5" />
+                                                </button>
                                             </div>
                                         </div>
 

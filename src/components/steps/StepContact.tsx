@@ -81,7 +81,7 @@ export function StepContact({ contact, onChange, onNext }: StepContactProps) {
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-2 group">
                             <label className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-500 group-focus-within:text-gold-600 transition-colors px-1">
-                                {t.contact.email} *
+                                {localContact.isCompany ? t.contact.email : 'Email'} *
                             </label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-300 group-focus-within:text-gold-500 transition-colors" />

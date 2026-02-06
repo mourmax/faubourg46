@@ -31,12 +31,18 @@ export interface FormulaDefinition {
     included?: string[];
 }
 
+export interface SelectedFormula {
+    formula: FormulaDefinition;
+    quantity: number;
+    customPrice?: number;
+}
+
 export interface QuoteItem {
     name: string;
     quantity: number;
     unitPriceTtc: number;
     totalTtc: number;
-    vatRate: VatRate; // Options usually stick to one rate (e.g. Alcohol 20%)
+    vatRate: VatRate;
 }
 
 export type LeadStatus = 'NEW' | 'CONTACTED' | 'WAITING' | 'VALIDATED' | 'CANCELLED';
@@ -67,9 +73,14 @@ export interface QuoteSelection {
         childrenGuests?: number;
     };
     formula: FormulaDefinition;
+    formulas: SelectedFormula[];
     options: QuoteItem[];
     discount?: {
         type: 'PERCENT' | 'AMOUNT';
+        value: number;
+    };
+    agencyCommission?: {
+        type: 'PERCENT' | 'FIXED';
         value: number;
     };
     internalNotes?: string;

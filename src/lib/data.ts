@@ -167,6 +167,7 @@ export const INITIAL_SELECTION: QuoteSelection = {
     },
     event: { date: new Date(), service: 'DINNER_1', guests: 10 },
     formula: FORMULAS[0],
+    formulas: [],
     options: []
 };
 
@@ -184,5 +185,7 @@ export const CHAMPAGNES: QuoteItem[] = [
 
 export const EXTRAS: QuoteItem[] = [
     { name: 'DJ', unitPriceTtc: 288.00, quantity: 0, totalTtc: 0, vatRate: 20 },
-    { name: 'Gâteau d’anniversaire', unitPriceTtc: 0, quantity: 0, totalTtc: 0, vatRate: 10 }
+    { name: 'Gâteau d’anniversaire', unitPriceTtc: 0, quantity: 0, totalTtc: 0, vatRate: 10 },
+    { name: 'Café (par pers.)', unitPriceTtc: 2.00, quantity: 0, totalTtc: 0, vatRate: 10 },
+    { name: 'Eau minérale plate/gazeuse (btl 3 pers)', unitPriceTtc: 3.00, quantity: 0, totalTtc: 0, vatRate: 10 }
 ];

@@ -19,18 +19,37 @@ export function InvoiceEditor({ existingInvoice, quoteSelection, onSave, onCance
         // Convert quote items to custom line items
         const quoteItems: CustomLineItem[] = [];
 
-        // Add formula
-        const formulaPriceHt = quoteSelection.formula.priceTtc / 1.1; // Assuming 10% VAT
-        quoteItems.push({
-            id: 'formula',
-            description: `${quoteSelection.formula.name} (${quoteSelection.event.guests} pers.)`,
-            quantity: quoteSelection.event.guests,
-            unitPriceHt: formulaPriceHt,
-            vatRate: 10,
-            totalHt: formulaPriceHt * quoteSelection.event.guests,
-            totalTva: (formulaPriceHt * quoteSelection.event.guests) * 0.1,
-            totalTtc: quoteSelection.formula.priceTtc * quoteSelection.event.guests
+        // Add formulas
+        quoteSelection.formulas.forEach(sf => {
+            if (sf.quantity <= 0) return;
+            const priceTtc = sf.customPrice !== undefined ? sf.customPrice : sf.formula.priceTtc;
+            const priceHt = priceTtc / 1.1; // Standard 10% VAT assumption for formulas in invoice
+            quoteItems.push({
+                id: `formula-${sf.formula.id}`,
+                description: `${sf.formula.name} (${sf.quantity} pers.)`,
+                quantity: sf.quantity,
+                unitPriceHt: priceHt,
+                vatRate: 10,
+                totalHt: priceHt * sf.quantity,
+                totalTva: (priceHt * sf.quantity) * 0.1,
+                totalTtc: priceTtc * sf.quantity
+            });
         });
+
+        // Backward compatibility if formulas is empty but single formula exists
+        if (quoteSelection.formulas.length === 0 && quoteSelection.formula) {
+            const formulaPriceHt = quoteSelection.formula.priceTtc / 1.1;
+            quoteItems.push({
+                id: 'formula',
+                description: `${quoteSelection.formula.name} (${quoteSelection.event.guests} pers.)`,
+                quantity: quoteSelection.event.guests,
+                unitPriceHt: formulaPriceHt,
+                vatRate: 10,
+                totalHt: formulaPriceHt * quoteSelection.event.guests,
+                totalTva: (formulaPriceHt * quoteSelection.event.guests) * 0.1,
+                totalTtc: quoteSelection.formula.priceTtc * quoteSelection.event.guests
+            });
+        }
 
         // Add options
         quoteSelection.options.forEach(opt => {
@@ -209,9 +228,11 @@ export function InvoiceEditor({ existingInvoice, quoteSelection, onSave, onCance
                                     <Input
                                         type="number"
                                         step="0.01"
+                                        min="0"
                                         className="bg-white border-neutral-100 text-neutral-900 h-12 rounded-xl"
-                                        value={item.unitPriceHt.toFixed(2)}
+                                        value={item.unitPriceHt || ''}
                                         onChange={e => updateCustomItem(item.id, { unitPriceHt: parseFloat(e.target.value) || 0 })}
+                                        placeholder="0.00"
                                     />
                                 </div>
                                 <div className="space-y-2">

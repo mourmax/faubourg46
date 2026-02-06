@@ -25,36 +25,56 @@ export const isFestiveRequired = (date: Date, service: string): boolean => {
 };
 
 export const calculateQuoteTotal = (selection: QuoteSelection) => {
-    const { formula, options, event } = selection;
-    const guestCount = event.guests || 0;
+    const { formulas, options, event, agencyCommission } = selection;
 
-    // Formula Totals (Adults)
-    let formulaTotalTtc = formula.priceTtc * guestCount;
-    let formulaHt10 = formula.breakdown.part10.ht * guestCount;
-    let formulaTva10 = formula.breakdown.part10.tva * guestCount;
-    let formulaHt20 = formula.breakdown.part20.ht * guestCount;
-    let formulaTva20 = formula.breakdown.part20.tva * guestCount;
+    // Totals accumulation
+    let totalTtc = 0;
+    let totalHt10 = 0;
+    let totalTva10 = 0;
+    let totalHt20 = 0;
+    let totalTva20 = 0;
 
-    // Children Totals (Only for Brunch)
-    if (formula.id === 'BRUNCH_ADULT' && event.childrenGuests && event.childrenGuests > 0) {
-        const childFormula = FORMULAS.find(f => f.id === 'BRUNCH_CHILD');
-        if (childFormula) {
-            const childCount = event.childrenGuests;
-            formulaTotalTtc += childFormula.priceTtc * childCount;
-            formulaHt10 += childFormula.breakdown.part10.ht * childCount;
-            formulaTva10 += childFormula.breakdown.part10.tva * childCount;
-            formulaHt20 += childFormula.breakdown.part20.ht * childCount;
-            formulaTva20 += childFormula.breakdown.part20.tva * childCount;
+    // 1. Process Formulas
+    formulas.forEach(sf => {
+        const { formula, quantity, customPrice } = sf;
+        if (quantity <= 0) return;
+
+        const priceTtc = customPrice !== undefined ? customPrice : formula.priceTtc;
+        const lineTotalTtc = priceTtc * quantity;
+        totalTtc += lineTotalTtc;
+
+        // Breakdown VAT based on formula's breakdown ratio if standard price,
+        // or proportional breakdown if custom price.
+        // For simplicity, we use the breakdown ratio from the formula definition.
+        // However, the formula definition already has ht/tva per person.
+        // If price is custom, we scale these proportionately.
+        const scaleFactor = priceTtc / formula.priceTtc;
+
+        totalHt10 += formula.breakdown.part10.ht * quantity * scaleFactor;
+        totalTva10 += formula.breakdown.part10.tva * quantity * scaleFactor;
+        totalHt20 += formula.breakdown.part20.ht * quantity * scaleFactor;
+        totalTva20 += formula.breakdown.part20.tva * quantity * scaleFactor;
+    });
+
+    // 2. Special case: Brunch Children (if not explicitly in formulas but Brunch Adult is)
+    const hasBrunchAdult = formulas.some(f => f.formula.id === 'BRUNCH_ADULT');
+    if (hasBrunchAdult && event.childrenGuests && event.childrenGuests > 0) {
+        // Only if not already explicitly added
+        const hasBrunchChild = formulas.some(f => f.formula.id === 'BRUNCH_CHILD');
+        if (!hasBrunchChild) {
+            const childFormula = FORMULAS.find(f => f.id === 'BRUNCH_CHILD');
+            if (childFormula) {
+                const childCount = event.childrenGuests;
+                totalTtc += childFormula.priceTtc * childCount;
+                totalHt10 += childFormula.breakdown.part10.ht * childCount;
+                totalTva10 += childFormula.breakdown.part10.tva * childCount;
+                totalHt20 += childFormula.breakdown.part20.ht * childCount;
+                totalTva20 += childFormula.breakdown.part20.tva * childCount;
+            }
         }
     }
 
-    // Options Totals (Wines, DJ, etc.)
-    let optionsTotalTtc = 0;
-    let optionsHt10 = 0;
-    let optionsTva10 = 0;
-    let optionsHt20 = 0;
-    let optionsTva20 = 0;
-
+    // 3. Process Options
     options.forEach(opt => {
         const qty = opt.quantity;
         if (qty > 0) {
@@ -70,37 +90,33 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
 
             // Birthday Cake logic
             if (opt.name === 'Gâteau d’anniversaire') {
-                if (formula.type === 'BRASSERIE') {
+                // If any formula is BRASSERIE, cake is free
+                const hasBrasserie = formulas.some(f => f.formula.type === 'BRASSERIE');
+                if (hasBrasserie) {
                     unitPrice = 0;
-                } else if (formula.type === 'TAPAS') {
-                    // 4.50€ per person
-                    unitPrice = 4.50;
+                } else {
+                    unitPrice = 4.50; // per guest? PRD said 4.50/pers if Tapas
                 }
             }
 
-            const lineTtc = unitPrice * (opt.name === 'Gâteau d’anniversaire' ? guestCount : qty);
-            optionsTotalTtc += lineTtc;
+            const lineTtc = unitPrice * (opt.name === 'Gâteau d’anniversaire' ? event.guests : qty);
+            totalTtc += lineTtc;
 
-            // Calculate HT and TVA from TTC based on rate
             const rate = opt.vatRate;
             const ht = lineTtc / (1 + rate / 100);
             const tva = lineTtc - ht;
 
             if (rate === 10) {
-                optionsHt10 += ht;
-                optionsTva10 += tva;
+                totalHt10 += ht;
+                totalTva10 += tva;
             } else {
-                optionsHt20 += ht;
-                optionsTva20 += tva;
+                totalHt20 += ht;
+                totalTva20 += tva;
             }
         }
     });
 
-    // Grand Totals
-    let totalTtc = formulaTotalTtc + optionsTotalTtc;
-    let totalHt = formulaHt10 + formulaHt20 + optionsHt10 + optionsHt20;
-
-    // Apply Discount
+    // 4. Apply Discount
     let discountAmount = 0;
     if (selection.discount) {
         if (selection.discount.type === 'PERCENT') {
@@ -111,15 +127,33 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
     }
 
     const discountFactor = totalTtc > 0 ? (totalTtc - discountAmount) / totalTtc : 1;
-
     totalTtc = Math.max(0, totalTtc - discountAmount);
 
-    const totalHt10 = (formulaHt10 + optionsHt10) * discountFactor;
-    const totalTva10 = (formulaTva10 + optionsTva10) * discountFactor;
-    const totalHt20 = (formulaHt20 + optionsHt20) * discountFactor;
-    const totalTva20 = (formulaTva20 + optionsTva20) * discountFactor;
+    totalHt10 *= discountFactor;
+    totalTva10 *= discountFactor;
+    totalHt20 *= discountFactor;
+    totalTva20 *= discountFactor;
 
-    totalHt = totalHt10 + totalHt20;
+    // 5. Agency Commission (Calculated AFTER discount, added to total)
+    let commissionAmount = 0;
+    if (agencyCommission && agencyCommission.value > 0) {
+        if (agencyCommission.type === 'PERCENT') {
+            commissionAmount = totalTtc * (agencyCommission.value / 100);
+        } else {
+            commissionAmount = agencyCommission.value;
+        }
+    }
+
+    // Commission is extra revenue, usually includes VAT 20%
+    if (commissionAmount > 0) {
+        totalTtc += commissionAmount;
+        const commissionHt = commissionAmount / 1.2;
+        const commissionTva = commissionAmount - commissionHt;
+        totalHt20 += commissionHt;
+        totalTva20 += commissionTva;
+    }
+
+    const totalHt = totalHt10 + totalHt20;
     const totalTva = totalTva10 + totalTva20;
 
     // Deposit (30%)
@@ -130,6 +164,7 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
         totalHt,
         totalTva,
         deposit,
+        commissionAmount,
         breakdown: {
             vat10: { ht: totalHt10, tva: totalTva10 },
             vat20: { ht: totalHt20, tva: totalTva20 }
