@@ -101,13 +101,35 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
 
     const getOptionQty = (name: string) => options.find(o => o.name === name)?.quantity || 0;
 
+    const totalFormulaQty = selectedFormulas.reduce((sum, f) => sum + f.quantity, 0);
+    const guestCount = selection.event.guests;
+    const isQtyMismatch = totalFormulaQty !== guestCount;
+
     return (
         <div className="space-y-6">
             <Card className="glass-card p-6 border-none space-y-4">
-                <div className="flex items-center gap-3 border-b border-neutral-100 pb-3">
-                    <Utensils className="w-4 h-4 text-gold-600" />
-                    <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">Choisir les Formules</h4>
+                <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                    <div className="flex items-center gap-3">
+                        <Utensils className="w-4 h-4 text-gold-600" />
+                        <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">Choisir les Formules</h4>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Total Formules</div>
+                        <div className={`text-xs font-black transition-colors ${isQtyMismatch ? 'text-red-500' : 'text-green-600'}`}>
+                            {totalFormulaQty} / {guestCount} convives
+                        </div>
+                    </div>
                 </div>
+
+                {isQtyMismatch && (
+                    <div className="p-3 bg-red-50 rounded-xl border border-red-100 flex items-center gap-3">
+                        <Clock className="w-4 h-4 text-red-500" />
+                        <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">
+                            Attention: Le nombre de formules ({totalFormulaQty}) ne correspond pas au nombre de convives ({guestCount}).
+                        </p>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-3">
                     {formulas.map(f => {
                         const qty = getFormulaQty(f.id);
@@ -162,11 +184,23 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
                 <div className="grid grid-cols-1 gap-2">
                     {[...CHAMPAGNES, ...EXTRAS].map(item => {
                         const qty = getOptionQty(item.name);
+
+                        let hint = "";
+                        if (item.name.includes("Café")) {
+                            hint = `Conseillé: ${guestCount} (1/pers)`;
+                        } else if (item.name.includes("Eau")) {
+                            const btlQty = Math.ceil(guestCount / 3);
+                            hint = `Conseillé: ${btlQty} (1 btl pour 3 pers)`;
+                        }
+
                         return (
                             <div key={item.name} className="flex items-center justify-between p-3 bg-neutral-50/50 rounded-xl border border-neutral-100">
                                 <div className="flex-1 min-w-0 pr-2">
                                     <div className="text-[10px] font-black text-neutral-900 uppercase truncate">{item.name}</div>
-                                    <div className="text-[9px] font-bold text-gold-600">{item.unitPriceTtc}€</div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-[9px] font-bold text-gold-600">{item.unitPriceTtc}€</div>
+                                        {hint && <div className="text-[8px] font-black text-neutral-400 uppercase tracking-tighter italic border-l border-neutral-200 pl-2">{hint}</div>}
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-3 bg-white px-2 py-1 rounded-lg border border-neutral-100">
                                     <button onClick={() => updateOptionQuantity(item.name, -1)} disabled={qty === 0} className="p-1 hover:text-red-500 disabled:opacity-20">

@@ -245,6 +245,25 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                 </Text>
             </View>
 
+            {/* Detailed Prestations (Inclusions) */}
+            <View wrap={false} style={{ marginTop: 20 }} break>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', borderBottom: '1px solid #B8860B', paddingBottom: 4, color: '#B8860B', marginBottom: 10 }}>DÉTAILS DES PRESTATIONS</Text>
+                {(selection.formulas || []).map((sf, idx) => (
+                    <View key={`detail-${idx}`} style={{ marginBottom: 15 }}>
+                        <Text style={{ fontSize: 10, fontWeight: 'bold', backgroundColor: '#F9F9F9', padding: 4 }}>{sf.formula.name} ({sf.quantity} pers.)</Text>
+                        <View style={{ marginTop: 5, paddingLeft: 10 }}>
+                            {sf.formula.included && sf.formula.included.length > 0 ? (
+                                <Text style={{ fontSize: 9, color: '#444', lineHeight: 1.4 }}>
+                                    Inclut : {sf.formula.included.join(' • ')}
+                                </Text>
+                            ) : (
+                                <Text style={{ fontSize: 9, color: '#666', fontStyle: 'italic' }}>Aucun détail spécifique.</Text>
+                            )}
+                        </View>
+                    </View>
+                ))}
+            </View>
+
             {/* Footer */}
             <Text style={styles.footer}>FAUBOURG 46 - 46 Boulevard Gambetta, 30000 Nîmes - Tél: 04 66 21 02 49 - Email: contact@faubourg46.fr</Text>
         </Page>
