@@ -150,6 +150,18 @@ export const FORMULAS: FormulaDefinition[] = [
             services: ['LUNCH'],
             days: [0, 6]
         }
+    },
+    {
+        id: 'PLAT_DU_JOUR',
+        name: 'Formule Plat du Jour',
+        type: 'BRASSERIE',
+        priceTtc: 26.00,
+        breakdown: createDetail(23.64, 2.36, 0, 0), // 10% VAT
+        included: ["Plat du Jour + Dessert", "UNIQUEMENT LE MIDI", "Du lundi au vendredi"],
+        restrictions: {
+            services: ['LUNCH'],
+            days: [1, 2, 3, 4, 5]
+        }
     }
 ];
 
@@ -185,7 +197,7 @@ export const CHAMPAGNES: QuoteItem[] = [
 
 export const EXTRAS: QuoteItem[] = [
     { name: 'DJ', unitPriceTtc: 288.00, quantity: 0, totalTtc: 0, vatRate: 20 },
-    { name: 'Gâteau d’anniversaire', unitPriceTtc: 0, quantity: 0, totalTtc: 0, vatRate: 10 },
+    { name: 'Gâteau d’anniversaire', unitPriceTtc: 4.5, quantity: 0, totalTtc: 0, vatRate: 10 },
     { name: 'Café (par pers.)', unitPriceTtc: 2.00, quantity: 0, totalTtc: 0, vatRate: 10 },
-    { name: 'Eau minérale plate/gazeuse (btl 3 pers)', unitPriceTtc: 3.00, quantity: 0, totalTtc: 0, vatRate: 10 }
+    { name: 'Eau minérale plate/gazeuse (btl 2 pers)', unitPriceTtc: 3.00, quantity: 0, totalTtc: 0, vatRate: 10 }
 ];

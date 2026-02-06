@@ -156,15 +156,15 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                         </View>
                     )}
 
-                {/* Options */}
-                {selection.options.map((opt, i) => (
-                    <View key={`option-${i}`} style={styles.tableRow}>
-                        <Text style={styles.colDesc}>{opt.name}</Text>
-                        <Text style={styles.colQty}>{opt.quantity}</Text>
-                        <Text style={styles.colPrice}>{formatCurrency(opt.unitPriceTtc)}</Text>
-                        <Text style={styles.colTotal}>{formatCurrency(opt.totalTtc)}</Text>
+                {/* Custom Item (Champs Libre) */}
+                {selection.customItem && selection.customItem.priceTtc > 0 && (
+                    <View style={styles.tableRow}>
+                        <Text style={styles.colDesc}>{selection.customItem.label || 'Prestation complémentaire'}</Text>
+                        <Text style={styles.colQty}>1</Text>
+                        <Text style={styles.colPrice}>{formatCurrency(selection.customItem.priceTtc)}</Text>
+                        <Text style={styles.colTotal}>{formatCurrency(selection.customItem.priceTtc)}</Text>
                     </View>
-                ))}
+                )}
             </View>
 
             {/* Totals */}

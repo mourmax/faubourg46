@@ -96,13 +96,7 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
 
             // Birthday Cake logic
             if (opt.name === 'Gâteau d’anniversaire') {
-                // If any formula is BRASSERIE, cake is free
-                const hasBrasserie = formulas.some(f => f.formula.type === 'BRASSERIE');
-                if (hasBrasserie) {
-                    unitPrice = 0;
-                } else {
-                    unitPrice = 4.50; // per guest? PRD said 4.50/pers if Tapas
-                }
+                unitPrice = 4.50; // Requested: 4.5€/pers for all
             }
 
             const lineTtc = unitPrice * (opt.name === 'Gâteau d’anniversaire' ? event.guests : qty);
@@ -121,6 +115,23 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
             }
         }
     });
+
+    // 3.5 Process Custom Item (Champs Libre)
+    if (selection.customItem && selection.customItem.priceTtc > 0) {
+        const { priceTtc, vatRate } = selection.customItem;
+        totalTtc += priceTtc;
+
+        const ht = priceTtc / (1 + vatRate / 100);
+        const tva = priceTtc - ht;
+
+        if (vatRate === 10) {
+            totalHt10 += ht;
+            totalTva10 += tva;
+        } else {
+            totalHt20 += ht;
+            totalTva20 += tva;
+        }
+    }
 
     // 4. Apply Discount
     let discountAmount = 0;

@@ -84,6 +84,11 @@ export interface QuoteSelection {
         value: number;
     };
     internalNotes?: string;
+    customItem?: {
+        label: string;
+        priceTtc: number;
+        vatRate: VatRate;
+    };
 }
 
 export interface QuoteLead {
