@@ -28,6 +28,7 @@ import { PdfDocument } from './PdfDocument';
 import { InvoicePdfDocument } from './InvoicePdfDocument';
 import { InvoiceEditor } from './InvoiceEditor';
 import { CHAMPAGNES, EXTRAS, FORMULAS as INITIAL_FORMULAS } from '../lib/data';
+import { getFormulaAvailability } from '../lib/quote-engine';
 
 interface LeadEditorProps {
     lead: QuoteLead;
@@ -36,10 +37,17 @@ interface LeadEditorProps {
 }
 
 function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['selection'], onChange: (updates: Partial<QuoteLead['selection']>) => void }) {
-    const { formulas: selectedFormulas = [], options, formula: primaryFormula } = selection;
+    const { formulas: selectedFormulas = [], options, formula: primaryFormula, event } = selection;
     const formulas = INITIAL_FORMULAS;
 
+    const getAvailabilityStatus = (f: any) => {
+        return getFormulaAvailability(f, event.date, event.service, event.guests);
+    };
+
     const handleFormulaQuantity = (id: string, delta: number) => {
+        const def = formulas.find(f => f.id === id);
+        if (!def || (delta > 0 && !getAvailabilityStatus(def).available)) return;
+
         const currentFormulas = [...selectedFormulas];
         const existingIndex = currentFormulas.findIndex(f => f.formula.id === id);
 
@@ -51,10 +59,7 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
                 currentFormulas[existingIndex] = { ...currentFormulas[existingIndex], quantity: newQty };
             }
         } else if (delta > 0) {
-            const def = formulas.find(f => f.id === id);
-            if (def) {
-                currentFormulas.push({ formula: def, quantity: delta });
-            }
+            currentFormulas.push({ formula: def, quantity: delta });
         }
 
         onChange({
@@ -63,6 +68,7 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
         });
     };
 
+    // ... rest of helper functions ...
     const handleCustomPrice = (id: string, price: number) => {
         const currentFormulas = selectedFormulas.map(sf => {
             if (sf.formula.id === id) {
@@ -132,6 +138,7 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
 
                 <div className="grid grid-cols-1 gap-3">
                     {formulas.map(f => {
+                        const { available, reason } = getAvailabilityStatus(f);
                         const qty = getFormulaQty(f.id);
                         const isSelected = qty > 0;
                         const price = getFormulaPrice(f.id);
@@ -139,8 +146,14 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
                         return (
                             <div
                                 key={f.id}
-                                className={`p-4 border-2 rounded-xl transition-all ${isSelected ? 'border-gold-500 bg-gold-50/20' : 'border-neutral-100 bg-neutral-50/50'}`}
+                                className={`p-4 border-2 rounded-xl transition-all relative overflow-hidden ${isSelected ? 'border-gold-500 bg-gold-50/20' : 'border-neutral-100 bg-neutral-50/50'} ${!available && !isSelected ? 'opacity-50 grayscale' : ''}`}
                             >
+                                {!available && (
+                                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-dark-900 text-white text-[7px] font-black px-1.5 py-0.5 uppercase tracking-widest rounded-sm z-10">
+                                        <Clock className="w-2 h-2 text-gold-500" />
+                                        {reason}
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center mb-2">
                                     <div>
                                         <div className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">{f.type}</div>
@@ -151,7 +164,11 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
                                             <Minus className="w-3 h-3" />
                                         </button>
                                         <span className="w-4 text-center text-[11px] font-black">{qty}</span>
-                                        <button onClick={() => handleFormulaQuantity(f.id, 1)} className="p-1 hover:text-gold-500">
+                                        <button
+                                            onClick={() => handleFormulaQuantity(f.id, 1)}
+                                            disabled={!available && qty === 0}
+                                            className="p-1 hover:text-gold-500 disabled:opacity-20"
+                                        >
                                             <Plus className="w-3 h-3" />
                                         </button>
                                     </div>

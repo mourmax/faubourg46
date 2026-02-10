@@ -1,5 +1,6 @@
 import type { QuoteSelection, FormulaDefinition } from '../../lib/types';
 import { CHAMPAGNES, EXTRAS } from '../../lib/data';
+import { getFormulaAvailability } from '../../lib/quote-engine';
 import { Check, Plus, Minus, Wine, Info, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/components';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -18,57 +19,7 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
     const { t } = useLanguage();
 
     const getAvailabilityStatus = (f: FormulaDefinition): { available: boolean; reason?: string } => {
-        const day = event.date.getDay(); // 0 = Dimanche, 1-5 = Lun-Ven, 6 = Samedi
-        const service = event.service;
-        const isWeekend = day === 0 || day === 6;
-        const isFestiveNight = day === 5 || day === 6; // Vendredi, Samedi
-
-        // Rule: Tapas is always available
-        if (f.type === 'TAPAS' && !f.id.includes('FESTIF')) {
-            return { available: true };
-        }
-
-        // Rule: Midi Weekday (L-V)
-        if (service === 'LUNCH' && !isWeekend) {
-            return { available: true };
-        }
-
-        // Rule: Midi Weekend (S, D) -> Brunch Only (10h-15h)
-        if (service === 'LUNCH' && isWeekend) {
-            if (f.id.includes('BRUNCH')) {
-                return { available: true };
-            }
-            return { available: false, reason: "Brunch UNIQUEMENT" };
-        }
-
-        // Rule: Brunch is ONLY for Lunch
-        if (f.id.includes('BRUNCH') && service !== 'LUNCH') {
-            return { available: false, reason: "Brunch midi uniquement" };
-        }
-
-        // Rule: Soir (Festif) V, S
-        if (isFestiveNight && (service === 'DINNER_1' || service === 'DINNER_FULL')) {
-            if (f.id.includes('FESTIF') || f.id.includes('FESTIVE')) {
-                return { available: true };
-            }
-            return { available: false, reason: "Soirée Festive uniquement" };
-        }
-
-        // Rule: Soir (Autres) V, S -> Only from 22h15 (Service 2)
-        if (isFestiveNight && service === 'DINNER_2') {
-            return { available: true };
-        }
-
-        // General Restrictions from data.ts
-        if (f.restrictions?.days && !f.restrictions.days.includes(day)) {
-            return { available: false, reason: "Indisponible ce jour" };
-        }
-
-        if (f.restrictions?.maxGuests && event.guests > f.restrictions.maxGuests) {
-            return { available: false, reason: `Max ${f.restrictions.maxGuests} pers.` };
-        }
-
-        return { available: true };
+        return getFormulaAvailability(f, event.date, event.service, event.guests);
     };
 
     const handleFormulaSelect = (id: string, delta: number) => {
@@ -143,8 +94,8 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                         <div className="flex flex-col items-end">
                             <div className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Total Formules</div>
                             <div className={`text-sm font-black transition-colors ${(selection.formulas || []).reduce((sum, f) => sum + f.quantity, 0) !== event.guests
-                                    ? 'text-red-500'
-                                    : 'text-green-600'
+                                ? 'text-red-500'
+                                : 'text-green-600'
                                 }`}>
                                 {(selection.formulas || []).reduce((sum, f) => sum + f.quantity, 0)} / {event.guests} convives
                             </div>

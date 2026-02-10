@@ -4,24 +4,69 @@ import { FORMULAS } from './data';
 export const isFestiveRequired = (date: Date, service: string): boolean => {
     const day = date.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
 
-    // "Pour rester sur les deux créneaux" - assumes checking if they want to stay long or just specific slots?
-    // Implementation: If service is DINNER_FULL and it's Fri/Sat
-    // PRD: "Condition : Pour rester sur les deux créneaux, sélection obligatoire d'une formule Festive."
-    // This likely means if they book BOTH services or spans across? 
-    // Or check if the user selected a "Long Service" option?
-    // Re-reading PRD: "Vendredi/Samedi soir : Service 1 (19h30-21h50) ou Service 2 (22h15). Condition : Pour rester sur les deux créneaux, sélection obligatoire d'une formule Festive."
-    // Interpretation: If they want to stay for the whole evening (Service 1 + Service 2), they must choose Festive.
-    // Implementation: We probably need a "Whole Evening" service option in the UI, or if they select specific time.
-    // Let's assume there's a 'DINNER_FULL' or similar, or we check if they selected "Service 1 & 2".
-
-    // For now, let's implement validation: if service check indicates "Double Service", return true.
-    // I'll assume 'DINNER_FULL' is a valid service key for "Both services".
-
     if (service === 'DINNER_FULL' && (day === 5 || day === 6)) {
         return true;
     }
 
     return false;
+};
+
+export const getFormulaAvailability = (
+    formula: { id: string; type: string; restrictions?: any },
+    date: Date,
+    service: string,
+    guests: number
+): { available: boolean; reason?: string } => {
+    const day = date.getDay(); // 0 = Dimanche, 1-5 = Lun-Ven, 6 = Samedi
+    const isWeekend = day === 0 || day === 6;
+    const isFestiveNight = day === 5 || day === 6; // Vendredi, Samedi
+
+    // Rule 1: Midi Weekend (S, D) -> Brunch Only (STRICT)
+    if (service === 'LUNCH' && isWeekend) {
+        if (formula.id.includes('BRUNCH')) {
+            return { available: true };
+        }
+        return { available: false, reason: "Brunch UNIQUEMENT" };
+    }
+
+    // Rule 2: Brunch is ONLY for Lunch
+    if (formula.id.includes('BRUNCH') && service !== 'LUNCH') {
+        return { available: false, reason: "Brunch midi uniquement" };
+    }
+
+    // Rule 3: Tapas is always available (except during Weekend Brunch or Festive Night constraints)
+    if (formula.type === 'TAPAS' && !formula.id.includes('FESTIF')) {
+        return { available: true };
+    }
+
+    // Rule 4: Midi Weekday (L-V)
+    if (service === 'LUNCH' && !isWeekend) {
+        return { available: true };
+    }
+
+    // Rule 5: Soir (Festif) V, S
+    if (isFestiveNight && (service === 'DINNER_1' || service === 'DINNER_FULL')) {
+        if (formula.id.includes('FESTIF') || formula.id.includes('FESTIVE')) {
+            return { available: true };
+        }
+        return { available: false, reason: "Soirée Festive uniquement" };
+    }
+
+    // Rule 6: Soir (Autres) V, S -> Only from 22h15 (Service 2)
+    if (isFestiveNight && service === 'DINNER_2') {
+        return { available: true };
+    }
+
+    // General Restrictions from data.ts
+    if (formula.restrictions?.days && !formula.restrictions.days.includes(day)) {
+        return { available: false, reason: "Indisponible ce jour" };
+    }
+
+    if (formula.restrictions?.maxGuests && guests > formula.restrictions.maxGuests) {
+        return { available: false, reason: `Max ${formula.restrictions.maxGuests} pers.` };
+    }
+
+    return { available: true };
 };
 
 export const calculateQuoteTotal = (selection: QuoteSelection) => {
