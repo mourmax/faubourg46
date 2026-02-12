@@ -13,4 +13,5 @@
 - [x] Refined PDF "Details" layout and fixed unnecessary page breaks.
 - [x] Implemented version history (last 3 versions) for quotes.
 - [x] Added clickable PDF download buttons (current + history) in Admin Leads.
+- [x] Fixed issue where editor information was not pre-filled (migration to multi-formula format).
 - [x] Pushed changes to git.

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, Button, Input } from './ui/components';
 import { Alert } from './ui/Alert';
 import { LeadStore } from '../lib/leads-store';
-import type { QuoteLead, LeadStatus, InvoiceData } from '../lib/types';
+import type { QuoteLead, LeadStatus, InvoiceData, FormulaDefinition, QuoteItem } from '../lib/types';
 import { formatCurrency } from '../lib/utils';
 import { calculateQuoteTotal } from '../lib/quote-engine';
 import {
@@ -32,13 +32,28 @@ import { getFormulaAvailability } from '../lib/quote-engine';
 
 interface LeadEditorProps {
     lead: QuoteLead;
+    catalogueFormulas?: FormulaDefinition[];
+    catalogueChampagnes?: QuoteItem[];
+    catalogueExtras?: QuoteItem[];
     onClose: () => void;
     onUpdate: () => void;
 }
 
-function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['selection'], onChange: (updates: Partial<QuoteLead['selection']>) => void }) {
+function AdminLeadMenuEditor({
+    selection,
+    onChange,
+    catalogueFormulas = INITIAL_FORMULAS,
+    catalogueChampagnes = CHAMPAGNES,
+    catalogueExtras = EXTRAS
+}: {
+    selection: QuoteLead['selection'],
+    onChange: (updates: Partial<QuoteLead['selection']>) => void,
+    catalogueFormulas?: FormulaDefinition[],
+    catalogueChampagnes?: QuoteItem[],
+    catalogueExtras?: QuoteItem[]
+}) {
     const { formulas: selectedFormulas = [], options, formula: primaryFormula, event } = selection;
-    const formulas = INITIAL_FORMULAS;
+    const formulas = catalogueFormulas;
 
     const getAvailabilityStatus = (f: any) => {
         return getFormulaAvailability(f, event.date, event.service, event.guests);
@@ -97,7 +112,7 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
                 currentOptions[existingIndex] = { ...currentOptions[existingIndex], quantity: newQty, totalTtc: newQty * currentOptions[existingIndex].unitPriceTtc };
             }
         } else if (delta > 0) {
-            const catalogItem = [...CHAMPAGNES, ...EXTRAS].find(i => i.name === name);
+            const catalogItem = [...catalogueChampagnes, ...catalogueExtras].find(i => i.name === name);
             if (catalogItem) {
                 currentOptions.push({ ...catalogItem, quantity: delta, totalTtc: delta * catalogItem.unitPriceTtc, vatRate: catalogItem.vatRate });
             }
@@ -199,7 +214,7 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
                     <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">Options supplémentaires</h4>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
-                    {[...CHAMPAGNES, ...EXTRAS].map(item => {
+                    {[...catalogueChampagnes, ...catalogueExtras].map(item => {
                         const qty = getOptionQty(item.name);
 
                         let hint = "";
@@ -239,7 +254,14 @@ function AdminLeadMenuEditor({ selection, onChange }: { selection: QuoteLead['se
     );
 }
 
-export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorProps) {
+export function LeadEditor({
+    lead: initialLead,
+    catalogueFormulas,
+    catalogueChampagnes,
+    catalogueExtras,
+    onClose,
+    onUpdate
+}: LeadEditorProps) {
     const [activeTab, setActiveTab] = useState<'CONTACT' | 'EVENT' | 'MENU' | 'NOTES'>('CONTACT');
     const [lead, setLead] = useState<QuoteLead>(initialLead);
     const [draft, setDraft] = useState<QuoteLead>(initialLead);
@@ -578,6 +600,9 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                 <AdminLeadMenuEditor
                                     selection={draft.selection}
                                     onChange={handleSelectionChange}
+                                    catalogueFormulas={catalogueFormulas}
+                                    catalogueChampagnes={catalogueChampagnes}
+                                    catalogueExtras={catalogueExtras}
                                 />
                                 <div className="p-2">
                                     <Button onClick={handleSaveChanges} disabled={isSaving} className="w-full h-16 text-sm font-black gold-gradient text-white gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-2xl border-none">

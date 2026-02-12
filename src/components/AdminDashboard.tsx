@@ -167,7 +167,11 @@ export function AdminDashboard() {
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {editingLead ? (
                         <LeadEditor
+                            key={editingLead.id}
                             lead={editingLead}
+                            catalogueFormulas={formulas}
+                            catalogueChampagnes={champagnes}
+                            catalogueExtras={extras}
                             onClose={() => { setEditingLead(null); setRefreshTrigger(t => t + 1); }}
                             onUpdate={() => setRefreshTrigger(t => t + 1)}
                         />

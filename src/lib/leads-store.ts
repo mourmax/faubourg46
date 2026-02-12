@@ -12,14 +12,39 @@ const mapLead = (doc: any): QuoteLead => {
 
     try {
         if (typeof selection === 'string') selection = JSON.parse(selection);
+
+        // --- Migration & Defaults ---
+        if (!selection.formulas || !Array.isArray(selection.formulas)) {
+            selection.formulas = [];
+            // If we have the old formula (singular) but no formulas (plural), migrate it
+            if (selection.formula && selection.formulas.length === 0) {
+                selection.formulas.push({
+                    formula: selection.formula,
+                    quantity: selection.event?.guests || 0
+                });
+            }
+        }
+
+        // Ensure essential fields exist
+        if (!selection.options) selection.options = [];
+        if (!selection.contact) selection.contact = { name: '', email: '', phone: '' };
+        if (!selection.event) selection.event = { date: new Date(), service: 'DINNER_1', guests: 0 };
+
         // CRITICAL: Restore Date objects from strings
         if (selection?.event?.date && typeof selection.event.date === 'string') {
             selection.event.date = new Date(selection.event.date);
         }
     } catch (e) {
         console.error('[LeadStore] Failed to parse selection JSON', e);
-        selection = { contact: { name: 'Erreur', email: '', phone: '' }, event: { date: new Date(), guests: 0, service: 'LUNCH' }, formula: { id: '', name: '', type: 'BRASSERIE', priceTtc: 0 }, options: [] };
+        selection = {
+            contact: { name: 'Erreur', email: '', phone: '' },
+            event: { date: new Date(), guests: 0, service: 'LUNCH' },
+            formula: { id: '', name: '', type: 'BRASSERIE', priceTtc: 0 },
+            formulas: [],
+            options: []
+        };
     }
+
 
     try {
         if (typeof history === 'string') history = JSON.parse(history);
