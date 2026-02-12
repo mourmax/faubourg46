@@ -217,6 +217,14 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                 </View>
             </View>
 
+            {/* Payment Info */}
+            <View style={{ marginTop: 15, padding: 10, backgroundColor: '#F9F9F9', borderRadius: 4 }}>
+                <Text style={{ fontSize: 9, marginBottom: 4, color: '#444' }}>Merci d'indiquer "Nom réservation + Date" dans le libellé du virement.</Text>
+                <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#B8860B' }}>
+                    IBAN FR76 1009 6182 9400 0283 7670 174 Titulaire du compte FAUBOURG 46
+                </Text>
+            </View>
+
             {/* General Conditions */}
             <View style={{ marginTop: 30, borderTop: '1px solid #EEE', paddingTop: 15 }}>
                 <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 5, color: '#B8860B' }}>NOS CONDITIONS GÉNÉRALES DE VENTE</Text>
