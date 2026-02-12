@@ -8,6 +8,7 @@ const mapLead = (doc: any): QuoteLead => {
     let selection = doc.selection;
     let comments = doc.comments;
     let invoice = doc.invoice;
+    let history = doc.history;
 
     try {
         if (typeof selection === 'string') selection = JSON.parse(selection);
@@ -19,6 +20,22 @@ const mapLead = (doc: any): QuoteLead => {
         console.error('[LeadStore] Failed to parse selection JSON', e);
         selection = { contact: { name: 'Erreur', email: '', phone: '' }, event: { date: new Date(), guests: 0, service: 'LUNCH' }, formula: { id: '', name: '', type: 'BRASSERIE', priceTtc: 0 }, options: [] };
     }
+
+    try {
+        if (typeof history === 'string') history = JSON.parse(history);
+        // Restore dates in history items
+        if (Array.isArray(history)) {
+            history.forEach((h: any) => {
+                if (h.event?.date && typeof h.event.date === 'string') {
+                    h.event.date = new Date(h.event.date);
+                }
+            });
+        }
+    } catch (e) {
+        console.error('[LeadStore] Failed to parse history JSON', e);
+        history = [];
+    }
+
 
     try {
         if (typeof comments === 'string') comments = JSON.parse(comments);
@@ -48,6 +65,7 @@ const mapLead = (doc: any): QuoteLead => {
         lastUpdated: doc.lastUpdated ? new Date(doc.lastUpdated) : new Date(),
         selection,
         comments: comments || [],
+        history: history || [],
         invoice
     };
 };
@@ -94,12 +112,30 @@ export const LeadStore = {
 
     async updateLead(id: string, updates: Partial<QuoteLead>): Promise<QuoteLead | null> {
         try {
+            const leadDoc = await databases.getDocument(databaseId, leadsCollectionId, id);
+            const currentLead = mapLead(leadDoc);
+
             const data: any = {
                 ...updates,
                 lastUpdated: new Date().toISOString()
             };
 
-            if (updates.selection) data.selection = JSON.stringify(updates.selection);
+            // Manage history of selections
+            if (updates.selection) {
+                const oldSelection = currentLead.selection;
+                const history = currentLead.history || [];
+
+                // Simple stringification check to see if selection actually changed
+                const isDifferent = JSON.stringify(oldSelection) !== JSON.stringify(updates.selection);
+
+                if (isDifferent) {
+                    const newHistory = [oldSelection, ...history].slice(0, 3);
+                    data.history = JSON.stringify(newHistory);
+                }
+                data.selection = JSON.stringify(updates.selection);
+            }
+
+
             if (updates.comments) data.comments = JSON.stringify(updates.comments);
             if (updates.invoice) data.invoice = JSON.stringify(updates.invoice);
 

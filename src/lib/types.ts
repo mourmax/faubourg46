@@ -86,9 +86,11 @@ export interface QuoteSelection {
     internalNotes?: string;
     customItem?: {
         label: string;
+        quantity: number;
         priceTtc: number;
         vatRate: VatRate;
     };
+
 }
 
 export interface QuoteLead {
@@ -98,8 +100,10 @@ export interface QuoteLead {
     createdAt: Date;
     comments: LeadComment[];
     lastUpdated: Date;
+    history?: QuoteSelection[];
     invoice?: InvoiceData;
 }
+
 
 export interface CustomLineItem {
     id: string;

@@ -39,3 +39,14 @@
     };
 }
 ```
+
+### Custom Item Schema (`customItem`)
+```typescript
+{
+    label: string;
+    quantity: number;
+    priceTtc: number; // Unit Price
+    vatRate: 10 | 20;
+}
+```
+

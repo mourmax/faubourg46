@@ -7,14 +7,21 @@ import { calculateQuoteTotal } from '../lib/quote-engine';
 import {
     Search,
     Calendar,
-    Mail,
+
     Clock,
     MessageSquare,
     ChevronRight,
+
     Filter,
     Trash2,
-    Briefcase
+    Briefcase,
+    Download,
+    FileText
 } from 'lucide-react';
+import { pdf } from '@react-pdf/renderer';
+import { PdfDocument } from './PdfDocument';
+
+
 
 interface AdminLeadsProps {
     onEdit: (lead: QuoteLead) => void;
@@ -38,6 +45,25 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
             setError(error?.message || "Erreur de connexion");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownloadPdf = async (e: React.MouseEvent, selection: any, id: string, isHistory = false) => {
+        e.stopPropagation();
+        try {
+            const quote = calculateQuoteTotal(selection);
+            const blob = await pdf(<PdfDocument selection={selection} quote={quote} />).toBlob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const suffix = isHistory ? '_ancienne_version' : '';
+            link.download = `Devis_Faubourg_${id}_${selection.contact.name.replace(/\s+/g, '_')}${suffix}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (err) {
+            console.error("PDF generation error", err);
+            alert("Erreur lors de la génération du PDF.");
         }
     };
 
@@ -162,7 +188,7 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-neutral-100">
+                                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 pt-4 border-t border-neutral-100">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest">
                                                     <Calendar className="w-3.5 h-3.5 text-gold-500" /> Date
@@ -186,21 +212,43 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest">
-                                                    <Mail className="w-3.5 h-3.5 text-gold-500" /> Email
-                                                </div>
-                                                <div className="text-xs font-black text-neutral-900 truncate max-w-[150px]">
-                                                    {lead.selection.contact.email}
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest">
                                                     <MessageSquare className="w-3.5 h-3.5 text-gold-500" /> Comm.
                                                 </div>
                                                 <div className="text-xs font-black text-neutral-900">
                                                     {lead.comments.length} message(s)
                                                 </div>
                                             </div>
+
+                                            {/* Devis Version Section */}
+                                            <div className="space-y-2 col-span-2 border-l border-neutral-100 pl-6">
+                                                <div className="flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                                                    <FileText className="w-3.5 h-3.5 text-gold-500" /> Documents
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        onClick={(e) => handleDownloadPdf(e, lead.selection, lead.id)}
+                                                        className="flex items-center gap-2 px-3 py-1.5 bg-gold-50 hover:bg-gold-100 text-gold-700 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all border border-gold-100"
+                                                        title="Télécharger la version actuelle"
+                                                    >
+                                                        <Download className="w-3 h-3" />
+                                                        Devis Actuel
+                                                    </button>
+
+                                                    {lead.history && lead.history.length > 0 && lead.history.map((h, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={(e) => handleDownloadPdf(e, h, lead.id, true)}
+                                                            className="flex items-center gap-2 px-3 py-1.5 bg-neutral-50 hover:bg-neutral-100 text-neutral-500 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all border border-neutral-100"
+                                                            title={`Version du ${h.event?.date?.toLocaleDateString() || 'archive'}`}
+                                                        >
+                                                            <Clock className="w-3 h-3" />
+                                                            V{lead.history!.length - idx}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
+
                                     </div>
 
                                     <div className="flex items-center gap-3">

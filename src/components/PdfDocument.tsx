@@ -160,9 +160,9 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
                 {selection.customItem && selection.customItem.priceTtc > 0 && (
                     <View style={styles.tableRow}>
                         <Text style={styles.colDesc}>{selection.customItem.label || 'Prestation complémentaire'}</Text>
-                        <Text style={styles.colQty}>1</Text>
+                        <Text style={styles.colQty}>{selection.customItem.quantity || 1}</Text>
                         <Text style={styles.colPrice}>{formatCurrency(selection.customItem.priceTtc)}</Text>
-                        <Text style={styles.colTotal}>{formatCurrency(selection.customItem.priceTtc)}</Text>
+                        <Text style={styles.colTotal}>{formatCurrency(selection.customItem.priceTtc * (selection.customItem.quantity || 1))}</Text>
                     </View>
                 )}
 
@@ -226,61 +226,60 @@ export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
             </View>
 
             {/* General Conditions */}
-            <View style={{ marginTop: 30, borderTop: '1px solid #EEE', paddingTop: 15 }}>
+            <View style={{ marginTop: 20, borderTop: '1px solid #EEE', paddingTop: 10 }}>
                 <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 5, color: '#B8860B' }}>NOS CONDITIONS GÉNÉRALES DE VENTE</Text>
 
-                <View style={{ marginBottom: 10 }}>
-                    <Text style={{ fontSize: 8, fontWeight: 'bold', marginBottom: 2 }}>VALIDITÉ DE L’OPTION :</Text>
-                    <Text style={{ fontSize: 7, color: '#444' }}>
-                        EN L’ABSENCE DE CONFIRMATION DANS UN DÉLAI DE 10 JOURS AVANT LA VISITE, PAR LE PAIEMENT DES 30% D’ARRHES, LES OPTIONS SERONT AUTOMATIQUEMENT ANNULÉES.
-                    </Text>
-                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                    <View style={{ width: '48%', marginBottom: 5 }}>
+                        <Text style={{ fontSize: 7, fontWeight: 'bold' }}>VALIDITÉ DE L’OPTION :</Text>
+                        <Text style={{ fontSize: 6, color: '#444' }}>
+                            EN L’ABSENCE DE CONFIRMATION DANS UN DÉLAI DE 10 JOURS AVANT LA VISITE, PAR LE PAIEMENT DES 30% D’ARRHES, LES OPTIONS SERONT AUTOMATIQUEMENT ANNULÉES.
+                        </Text>
+                    </View>
 
-                <View style={{ marginBottom: 10 }}>
-                    <Text style={{ fontSize: 8, fontWeight: 'bold', marginBottom: 2 }}>CONFIRMATION DE RÉSERVATION :</Text>
-                    <Text style={{ fontSize: 7, color: '#444' }}>
-                        30 % D’ARRHES SONT DEMANDÉS À LA RÉSERVATION, LE SOLDE SUR PLACE OU À RÉCEPTION DE FACTURE.
-                    </Text>
-                </View>
+                    <View style={{ width: '48%', marginBottom: 5 }}>
+                        <Text style={{ fontSize: 7, fontWeight: 'bold' }}>CONFIRMATION DE RÉSERVATION :</Text>
+                        <Text style={{ fontSize: 6, color: '#444' }}>
+                            30 % D’ARRHES SONT DEMANDÉS À LA RÉSERVATION, LE SOLDE SUR PLACE OU À RÉCEPTION DE FACTURE.
+                        </Text>
+                    </View>
 
-                <View style={{ marginBottom: 10 }}>
-                    <Text style={{ fontSize: 8, fontWeight: 'bold', marginBottom: 2 }}>CONDITIONS D’ANNULATION :</Text>
-                    <Text style={{ fontSize: 7, color: '#444', marginBottom: 1 }}>• ANNULATION TOTALE 10 JOURS OUVRÉS AVANT LA DATE : 40 % DES ARRHES SONT CONSERVÉES</Text>
-                    <Text style={{ fontSize: 7, color: '#444', marginBottom: 1 }}>• ANNULATION TOTALE 5 JOURS OUVRÉS AVANT LA DATE : 70 % DES ARRHES SONT CONSERVÉES</Text>
-                    <Text style={{ fontSize: 7, color: '#444', marginBottom: 1 }}>• ANNULATION TOTALE 3 JOURS OUVRÉS AVANT LA DATE : 100 % DES ARRHES SONT CONSERVÉES</Text>
-                    <Text style={{ fontSize: 7, color: '#444', marginBottom: 1 }}>• ANNULATION LA DATE MÊME : 100 % DU DEVIS.</Text>
-                </View>
+                    <View style={{ width: '48%' }}>
+                        <Text style={{ fontSize: 7, fontWeight: 'bold' }}>CONDITIONS D’ANNULATION :</Text>
+                        <Text style={{ fontSize: 6, color: '#444' }}>J-10: 40% conservés • J-5: 70% conservés • J-3: 100% conservés • Le jour même: 100% du devis.</Text>
+                    </View>
 
-                <View style={{ marginBottom: 10 }}>
-                    <Text style={{ fontSize: 8, fontWeight: 'bold', marginBottom: 2 }}>MODIFICATIONS DU NOMBRE DE PERSONNES :</Text>
-                    <Text style={{ fontSize: 7, color: '#444' }}>
-                        LES EFFECTIFS MINIMUMS RETENUS POUR LA FACTURATION SERONT CEUX TRANSMIS AU PLUS TARD PAR LE CLIENT 5 JOURS OUVRÉS AVANT LA DATE DU DÉNER.
-                    </Text>
+                    <View style={{ width: '48%' }}>
+                        <Text style={{ fontSize: 7, fontWeight: 'bold' }}>MODIFICATIONS EFFECTIFS :</Text>
+                        <Text style={{ fontSize: 6, color: '#444' }}>
+                            À TRANSMETTRE AU PLUS TARD 5 JOURS OUVRÉS AVANT LA DATE DE L'ÉVÉNEMENT.
+                        </Text>
+                    </View>
                 </View>
-
-                <Text style={{ fontSize: 7, color: '#666', fontStyle: 'italic', marginTop: 5 }}>
-                    TOUTE RÉSERVATION VAUT ACCEPTATION DES PRÉSENTES CONDITIONS GÉNÉRALES DE VENTE.
-                </Text>
             </View>
 
             {/* Detailed Prestations (Inclusions) */}
-            <View wrap={false} style={{ marginTop: 20 }} break>
-                <Text style={{ fontSize: 12, fontWeight: 'bold', borderBottom: '1px solid #B8860B', paddingBottom: 4, color: '#B8860B', marginBottom: 10 }}>DÉTAILS DES PRESTATIONS</Text>
+            <View wrap={false} style={{ marginTop: 25, paddingTop: 15, borderTop: '1px solid #EEE' }}>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', borderBottom: '1px solid #B8860B', paddingBottom: 4, color: '#B8860B', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Détails des prestations</Text>
                 {(selection.formulas || []).map((sf, idx) => (
-                    <View key={`detail-${idx}`} style={{ marginBottom: 15 }}>
-                        <Text style={{ fontSize: 10, fontWeight: 'bold', backgroundColor: '#F9F9F9', padding: 4 }}>{sf.formula.name} ({sf.quantity} pers.)</Text>
-                        <View style={{ marginTop: 5, paddingLeft: 10 }}>
+                    <View key={`detail-${idx}`} style={{ marginBottom: 15, padding: 8, backgroundColor: '#FDFDFD', border: '1px solid #F0F0F0', borderRadius: 4 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottom: '1px solid #F0F0F0', paddingBottom: 4, marginBottom: 6 }}>
+                            <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#1A1A1A' }}>{sf.formula.name}</Text>
+                            <Text style={{ fontSize: 9, color: '#B8860B', fontWeight: 'bold' }}>{sf.quantity} pers.</Text>
+                        </View>
+                        <View style={{ marginTop: 2 }}>
                             {sf.formula.included && sf.formula.included.length > 0 ? (
-                                <Text style={{ fontSize: 9, color: '#444', lineHeight: 1.4 }}>
-                                    Inclut : {sf.formula.included.join(' • ')}
+                                <Text style={{ fontSize: 9, color: '#444', lineHeight: 1.5 }}>
+                                    {sf.formula.included.join(' • ')}
                                 </Text>
                             ) : (
-                                <Text style={{ fontSize: 9, color: '#666', fontStyle: 'italic' }}>Aucun détail spécifique.</Text>
+                                <Text style={{ fontSize: 9, color: '#666', fontStyle: 'italic' }}>Consulter notre carte pour le détail des produits inclus.</Text>
                             )}
                         </View>
                     </View>
                 ))}
             </View>
+
 
             {/* Footer */}
             <Text style={styles.footer}>FAUBOURG 46 - 46 Boulevard Gambetta, 30000 Nîmes - Tél: 04 66 21 02 49 - Email: contact@faubourg46.fr</Text>

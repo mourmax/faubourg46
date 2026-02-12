@@ -669,24 +669,40 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                             <Plus className="w-4 h-4 text-gold-600" />
                                             <h4 className="text-[10px] font-black uppercase tracking-widest text-dark-900">Ajouter un champ libre (Optionnel)</h4>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                             <div className="space-y-2 md:col-span-1">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Libellé libre</label>
                                                 <Input
                                                     className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
-                                                    placeholder="Ex: Frais de dossier, Logistique..."
+                                                    placeholder="Ex: Frais de dossier..."
                                                     value={draft.selection.customItem?.label || ''}
                                                     onChange={e => setDraft(prev => ({
                                                         ...prev,
                                                         selection: {
                                                             ...prev.selection,
-                                                            customItem: { ...(prev.selection.customItem || { priceTtc: 0, vatRate: 20 }), label: e.target.value }
+                                                            customItem: { ...(prev.selection.customItem || { priceTtc: 0, vatRate: 20, quantity: 1 }), label: e.target.value }
                                                         }
                                                     }))}
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Prix TTC (€)</label>
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Quantité</label>
+                                                <Input
+                                                    type="number"
+                                                    className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
+                                                    placeholder="1"
+                                                    value={draft.selection.customItem?.quantity || ''}
+                                                    onChange={e => setDraft(prev => ({
+                                                        ...prev,
+                                                        selection: {
+                                                            ...prev.selection,
+                                                            customItem: { ...(prev.selection.customItem || { label: '', priceTtc: 0, vatRate: 20 }), quantity: parseInt(e.target.value) || 0 }
+                                                        }
+                                                    }))}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Prix Unit. TTC (€)</label>
                                                 <Input
                                                     type="number"
                                                     className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
@@ -696,7 +712,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                                         ...prev,
                                                         selection: {
                                                             ...prev.selection,
-                                                            customItem: { ...(prev.selection.customItem || { label: '', vatRate: 20 }), priceTtc: parseFloat(e.target.value) || 0 }
+                                                            customItem: { ...(prev.selection.customItem || { label: '', vatRate: 20, quantity: 1 }), priceTtc: parseFloat(e.target.value) || 0 }
                                                         }
                                                     }))}
                                                 />
@@ -709,7 +725,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                                             ...prev,
                                                             selection: {
                                                                 ...prev.selection,
-                                                                customItem: { ...(prev.selection.customItem || { label: '', priceTtc: 0 }), vatRate: 10 }
+                                                                customItem: { ...(prev.selection.customItem || { label: '', priceTtc: 0, quantity: 1 }), vatRate: 10 }
                                                             }
                                                         }))}
                                                         className={`flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${draft.selection.customItem?.vatRate === 10 ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
@@ -721,7 +737,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                                             ...prev,
                                                             selection: {
                                                                 ...prev.selection,
-                                                                customItem: { ...(prev.selection.customItem || { label: '', priceTtc: 0 }), vatRate: 20 }
+                                                                customItem: { ...(prev.selection.customItem || { label: '', priceTtc: 0, quantity: 1 }), vatRate: 20 }
                                                             }
                                                         }))}
                                                         className={`flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${draft.selection.customItem?.vatRate !== 10 ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
@@ -731,6 +747,7 @@ export function LeadEditor({ lead: initialLead, onClose, onUpdate }: LeadEditorP
                                                 </div>
                                             </div>
                                         </div>
+
                                     </div>
 
                                     <div className="space-y-2">
