@@ -42,16 +42,17 @@ const formatCurrency = (amount: number) => {
 interface PdfDocumentProps {
     selection: QuoteSelection;
     quote: ReturnType<typeof calculateQuoteTotal>;
+    reference?: string;
 }
 
-export const PdfDocument = ({ selection, quote }: PdfDocumentProps) => (
+export const PdfDocument = ({ selection, quote, reference }: PdfDocumentProps) => (
     <Document>
         <Page size="A4" style={styles.page}>
 
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.title}>FAUBOURG 46</Text>
-                <Text style={styles.subtitle}>Devis Événementiel #{(() => {
+                <Text style={styles.subtitle}>Devis Événementiel #{reference || (() => {
                     const now = new Date();
                     const day = String(now.getDate()).padStart(2, '0');
                     const month = String(now.getMonth() + 1).padStart(2, '0');

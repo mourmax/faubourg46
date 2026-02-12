@@ -254,6 +254,16 @@ function AdminLeadMenuEditor({
     );
 }
 
+// Helper to generate reference (JJMMYY-HH:MM)
+const generateReference = (date: Date = new Date()) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}${month}${year}-${hours}:${minutes}`;
+};
+
 export function LeadEditor({
     lead: initialLead,
     catalogueFormulas,
@@ -268,7 +278,7 @@ export function LeadEditor({
     const [newComment, setNewComment] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [showInvoiceEditor, setShowInvoiceEditor] = useState(false);
-    const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string } | null>(null);
+    const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string; duration?: number } | null>(null);
     const quote = calculateQuoteTotal(draft.selection);
 
     const tabs = [
@@ -332,7 +342,7 @@ export function LeadEditor({
         }));
     };
 
-    const handleSaveChanges = async () => {
+    const handleSaveChanges = async (showNotification = true) => {
         setIsSaving(true);
         try {
             await LeadStore.updateLead(draft.id, {
@@ -341,10 +351,16 @@ export function LeadEditor({
             });
             setLead(draft);
             onUpdate();
-            setAlertState({ type: 'success', title: 'Modifications enregistrées !', message: 'Les changements ont été sauvegardés avec succès.' });
+            if (showNotification) {
+                setAlertState({
+                    type: 'success',
+                    title: 'Enregistré',
+                    duration: 1500 // Short duration
+                });
+            }
         } catch (error) {
             console.error(error);
-            setAlertState({ type: 'error', title: 'Erreur de sauvegarde', message: 'Impossible d\'enregistrer les modifications.' });
+            setAlertState({ type: 'error', title: 'Erreur', message: 'Échec de sauvegarde.' });
         } finally {
             setIsSaving(false);
         }
@@ -383,17 +399,41 @@ export function LeadEditor({
 
     const handleDownloadQuote = async () => {
         try {
-            const blob = await pdf(<PdfDocument selection={draft.selection} quote={quote} />).toBlob();
+            const newRef = generateReference();
+
+            // Force save with new reference before download
+            setIsSaving(true);
+            const updatedLead = await LeadStore.updateLead(draft.id, {
+                status: draft.status,
+                selection: draft.selection,
+                lastReference: newRef
+            });
+
+            if (updatedLead) {
+                setLead(updatedLead);
+                setDraft(updatedLead);
+                onUpdate();
+            }
+
+            const blob = await pdf(<PdfDocument selection={draft.selection} quote={quote} reference={newRef} />).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `Devis_Faubourg_${draft.id}_${draft.selection.contact.name.replace(/\s+/g, '_')}.pdf`;
+            link.download = `Devis_Faubourg_${newRef}_${draft.selection.contact.name.replace(/\s+/g, '_')}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            setAlertState({
+                type: 'success',
+                title: 'Devis généré',
+                message: `Version ${newRef} enregistrée et téléchargée.`
+            });
         } catch (e) {
             console.error("PDF Error", e);
-            alert("Erreur lors de la génération du PDF.");
+            setAlertState({ type: 'error', title: 'Erreur', message: 'Échec de génération du devis.' });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -428,7 +468,14 @@ export function LeadEditor({
                 </button>
                 <div>
                     <h2 className="text-3xl font-black text-dark-900 uppercase tracking-tighter">Édition Demande #{lead.id}</h2>
-                    <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-[0.2em]">Dernière mise à jour : {lead.lastUpdated.toLocaleString()}</p>
+                    <div className="flex items-center gap-4 mt-1">
+                        <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-[0.2em]">Dernière mise à jour : {lead.lastUpdated.toLocaleString()}</p>
+                        {lead.lastReference && (
+                            <span className="text-[10px] font-black bg-gold-50 text-gold-600 px-3 py-1 rounded-full tracking-tighter border border-gold-100 uppercase">
+                                Version: {lead.lastReference}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -470,7 +517,12 @@ export function LeadEditor({
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
+                                    onClick={() => {
+                                        if (activeTab !== tab.id) {
+                                            handleSaveChanges(true);
+                                            setActiveTab(tab.id);
+                                        }
+                                    }}
                                     className={`flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex-1 justify-center
                                         ${isActive ? 'bg-gold-500 text-white shadow-lg' : 'text-neutral-400 hover:text-dark-900 hover:bg-neutral-50'}`}
                                 >
@@ -490,7 +542,7 @@ export function LeadEditor({
                                         <User className="w-6 h-6 text-gold-600" />
                                         <h3 className="text-lg font-black text-dark-900 uppercase tracking-widest">Coordonnées Client</h3>
                                     </div>
-                                    <Button onClick={handleSaveChanges} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
+                                    <Button onClick={() => handleSaveChanges(true)} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
                                         <Save className="w-4 h-4 mr-2" /> {isSaving ? 'EN COURS...' : 'ENREGISTRER'}
                                     </Button>
                                 </div>
@@ -546,7 +598,7 @@ export function LeadEditor({
                                         <Calendar className="w-6 h-6 text-gold-600" />
                                         <h3 className="text-lg font-black text-dark-900 uppercase tracking-widest">Paramètres Événement</h3>
                                     </div>
-                                    <Button onClick={handleSaveChanges} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
+                                    <Button onClick={() => handleSaveChanges(true)} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
                                         <Save className="w-4 h-4 mr-2" /> {isSaving ? 'EN COURS...' : 'ENREGISTRER'}
                                     </Button>
                                 </div>
@@ -605,7 +657,7 @@ export function LeadEditor({
                                     catalogueExtras={catalogueExtras}
                                 />
                                 <div className="p-2">
-                                    <Button onClick={handleSaveChanges} disabled={isSaving} className="w-full h-16 text-sm font-black gold-gradient text-white gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-2xl border-none">
+                                    <Button onClick={() => handleSaveChanges(true)} disabled={isSaving} className="w-full h-16 text-sm font-black gold-gradient text-white gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-2xl border-none">
                                         <Save className="w-6 h-6" />
                                         {isSaving ? 'ENREGISTREMENT...' : 'SAUVEGARDER LE MENU'}
                                     </Button>
@@ -620,7 +672,7 @@ export function LeadEditor({
                                         <Tag className="w-6 h-6 text-gold-600" />
                                         <h3 className="text-lg font-black text-dark-900 uppercase tracking-widest">Remise & Notes Internes</h3>
                                     </div>
-                                    <Button onClick={handleSaveChanges} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
+                                    <Button onClick={() => handleSaveChanges(true)} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
                                         <Save className="w-4 h-4 mr-2" /> {isSaving ? 'EN COURS...' : 'ENREGISTRER'}
                                     </Button>
                                 </div>
@@ -800,7 +852,7 @@ export function LeadEditor({
                         </div>
                         <div className="relative z-10 space-y-6">
                             <div className="space-y-1">
-                                <div className="text-[11px] font-black uppercase tracking-[0.3em] text-white/80">Total Devis Regénéré</div>
+                                <div className="text-[11px] font-black uppercase tracking-[0.3em] text-white/80">TOTAL DEVIS ACTUEL</div>
                                 <div className="text-5xl font-black tracking-tighter tabular-nums drop-shadow-sm">{formatCurrency(quote.totalTtc)}</div>
                             </div>
                             <div className="pt-6 border-t border-white/20 grid grid-cols-2 gap-y-4 gap-x-8">
@@ -930,6 +982,7 @@ export function LeadEditor({
                     type={alertState.type}
                     title={alertState.title}
                     message={alertState.message}
+                    duration={alertState.duration}
                     onClose={() => setAlertState(null)}
                 />
             )}

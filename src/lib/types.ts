@@ -100,6 +100,8 @@ export interface QuoteLead {
     createdAt: Date;
     comments: LeadComment[];
     lastUpdated: Date;
+    totalTtc?: number;
+    lastReference?: string;
     history?: QuoteSelection[];
     invoice?: InvoiceData;
 }

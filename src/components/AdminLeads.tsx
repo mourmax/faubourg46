@@ -171,6 +171,11 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                                                 lead.status === 'WAITING' ? 'En attente' :
                                                                     lead.status === 'VALIDATED' ? 'Validé' : 'Annulé'}
                                                     </span>
+                                                    {lead.lastReference && (
+                                                        <span className="text-[10px] font-black bg-gold-50 text-gold-600 px-3 py-1 rounded-full tracking-tighter border border-gold-100">
+                                                            REF: {lead.lastReference}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <h3 className="text-2xl font-black text-neutral-900 uppercase tracking-tight flex items-center gap-3">
                                                     {lead.selection.contact.name}
@@ -183,8 +188,11 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                                 </h3>
                                             </div>
                                             <div className="text-right sr-only md:not-sr-only">
-                                                <div className="text-2xl font-black text-gold-700">{formatCurrency(quote.totalTtc)}</div>
-                                                <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Estimation TTC</div>
+                                                <div className="text-3xl font-black text-gold-700">{formatCurrency(quote.totalTtc)}</div>
+                                                <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mt-1">Estimation TTC</div>
+                                                <div className="text-[8px] text-neutral-400 font-bold uppercase tracking-widest mt-2">
+                                                    Mis à jour le {lead.lastUpdated.toLocaleDateString('fr-FR')} à {lead.lastUpdated.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
                                             </div>
                                         </div>
 
@@ -227,11 +235,11 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                                 <div className="flex flex-wrap gap-2">
                                                     <button
                                                         onClick={(e) => handleDownloadPdf(e, lead.selection, lead.id)}
-                                                        className="flex items-center gap-2 px-3 py-1.5 bg-gold-50 hover:bg-gold-100 text-gold-700 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all border border-gold-100"
+                                                        className="flex items-center gap-2 px-3 py-1.5 bg-gold-600 hover:bg-gold-700 text-white rounded-lg text-[9px] font-black uppercase tracking-tight transition-all shadow-sm"
                                                         title="Télécharger la version actuelle"
                                                     >
                                                         <Download className="w-3 h-3" />
-                                                        Devis Actuel
+                                                        Devis Actuel {lead.lastReference && `(${lead.lastReference})`}
                                                     </button>
 
                                                     {lead.history && lead.history.length > 0 && lead.history.map((h, idx) => (

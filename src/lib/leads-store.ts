@@ -1,6 +1,7 @@
 import { databases, APPWRITE_CONFIG } from './appwrite';
 import { ID, Query } from 'appwrite';
 import type { QuoteLead, QuoteSelection, LeadComment } from './types';
+import { calculateQuoteTotal } from './quote-engine';
 
 const { databaseId, leadsCollectionId } = APPWRITE_CONFIG;
 
@@ -114,12 +115,14 @@ export const LeadStore = {
     async saveLead(selection: QuoteSelection): Promise<QuoteLead> {
         console.log('[LeadStore] Saving lead to Appwrite...');
         try {
+            const quote = calculateQuoteTotal(selection);
             const data = {
                 status: 'NEW',
                 selection: JSON.stringify(selection),
                 createdAt: new Date().toISOString(),
                 lastUpdated: new Date().toISOString(),
-                comments: JSON.stringify([])
+                comments: JSON.stringify([]),
+                totalTtc: quote.totalTtc
             };
 
             const response = await databases.createDocument(
@@ -158,11 +161,16 @@ export const LeadStore = {
                     data.history = JSON.stringify(newHistory);
                 }
                 data.selection = JSON.stringify(updates.selection);
+
+                // Calculate and store total for easier display in dashboard
+                const quote = calculateQuoteTotal(updates.selection);
+                data.totalTtc = quote.totalTtc;
             }
 
 
             if (updates.comments) data.comments = JSON.stringify(updates.comments);
             if (updates.invoice) data.invoice = JSON.stringify(updates.invoice);
+
 
             // Appwrite doesn't like id in the data object
             delete data.id;

@@ -43,12 +43,12 @@ export function Alert({ type, title, message, onClose, duration = 4000 }: AlertP
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed top-6 right-6 z-[9999] flex flex-col items-end pointer-events-none">
             <div
                 className={`
-                    relative max-w-md w-full p-6 rounded-3xl border-2 shadow-2xl
+                    pointer-events-auto relative max-w-sm w-[320px] p-5 rounded-2xl border-2 shadow-2xl
                     ${styles[type]}
-                    ${isVisible ? 'animate-in zoom-in-95 slide-in-from-bottom-4 duration-300' : 'animate-out zoom-out-95 slide-out-to-bottom-4 duration-200'}
+                    ${isVisible ? 'animate-in slide-in-from-right-8 duration-300' : 'animate-out fade-out slide-out-to-right-8 duration-200'}
                 `}
             >
                 <button
@@ -81,9 +81,9 @@ export function Alert({ type, title, message, onClose, duration = 4000 }: AlertP
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 rounded-b-3xl overflow-hidden">
                     <div
                         className={`h-full ${type === 'success' ? 'bg-green-600' :
-                                type === 'error' ? 'bg-red-600' :
-                                    type === 'warning' ? 'bg-amber-600' :
-                                        'bg-blue-600'
+                            type === 'error' ? 'bg-red-600' :
+                                type === 'warning' ? 'bg-amber-600' :
+                                    'bg-blue-600'
                             }`}
                         style={{
                             animation: `shrink ${duration}ms linear forwards`
