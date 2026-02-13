@@ -179,7 +179,7 @@ export const INITIAL_SELECTION: QuoteSelection = {
     },
     event: { date: new Date(), service: 'DINNER_1', guests: 10 },
     formula: FORMULAS[0],
-    formulas: [{ formula: FORMULAS[0], quantity: 10 }],
+    formulas: [],
     options: []
 };
 
