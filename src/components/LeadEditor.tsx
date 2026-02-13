@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, Button, Input } from './ui/components';
 import { Alert } from './ui/Alert';
 import { LeadStore } from '../lib/leads-store';
@@ -125,6 +125,51 @@ function AdminLeadMenuEditor({
     const totalFormulaQty = selectedFormulas.reduce((sum, f) => sum + f.quantity, 0);
     const guestCount = selection.event.guests;
     const isQtyMismatch = totalFormulaQty !== guestCount;
+
+    const cartSummary = useMemo(() => {
+        const { formulas = [], options = [], customItem, event } = selection;
+        const drinkCat = catalogueChampagnes || CHAMPAGNES;
+        const extraCat = catalogueExtras || EXTRAS;
+
+        // 1. Formules
+        const fQty = formulas.reduce((sum, f) => sum + f.quantity, 0);
+        const fTotal = formulas.reduce((sum, f) => sum + (f.customPrice ?? f.formula.priceTtc) * f.quantity, 0);
+
+        // 2. Boissons (items in catalogueChampagnes)
+        const drinkItems = options.filter(opt => drinkCat.some(c => c.name === opt.name));
+        const bQty = drinkItems.reduce((sum, o) => sum + o.quantity, 0);
+        const bTotal = drinkItems.reduce((sum, o) => sum + (o.unitPriceTtc * o.quantity), 0);
+
+        // 3. Extras (items in catalogueExtras + customItem)
+        const extraItems = options.filter(opt => extraCat.some(e => e.name === opt.name));
+        let eQty = extraItems.reduce((sum, o) => {
+            if (o.name === 'Gâteau d’anniversaire') return sum + event.guests;
+            return sum + o.quantity;
+        }, 0);
+        let eTotal = extraItems.reduce((sum, o) => {
+            let up = o.unitPriceTtc;
+            if (o.name === 'DJ') {
+                const day = event.date.getDay();
+                if (day === 4 || day === 5 || day === 6) up = 0;
+            }
+            if (o.name === 'Gâteau d’anniversaire') {
+                up = 4.5;
+                return sum + (up * event.guests);
+            }
+            return sum + (up * o.quantity);
+        }, 0);
+
+        if (customItem && customItem.priceTtc > 0) {
+            eQty += (customItem.quantity || 1);
+            eTotal += customItem.priceTtc * (customItem.quantity || 1);
+        }
+
+        return {
+            formulas: { qty: fQty, total: fTotal },
+            drinks: { qty: bQty, total: bTotal },
+            extras: { qty: eQty, total: eTotal }
+        };
+    }, [selection, catalogueChampagnes, catalogueExtras]);
 
     return (
         <div className="space-y-6">
@@ -259,6 +304,107 @@ function AdminLeadMenuEditor({
                             </div>
                         );
                     })}
+                </div>
+            </Card>
+
+            {/* Champ Libre (Optionnel) */}
+            <Card className="glass-card p-6 border-none space-y-4">
+                <div className="flex items-center gap-3 border-b border-neutral-100 pb-3">
+                    <Plus className="w-4 h-4 text-gold-600" />
+                    <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">Ajouter un champ libre (Optionnel)</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-2 md:col-span-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Libellé libre</label>
+                        <Input
+                            className="bg-neutral-50 border-neutral-100 text-neutral-900 h-12 rounded-xl focus:bg-white focus:border-gold-500 text-xs"
+                            placeholder="Ex: Frais de dossier..."
+                            value={selection.customItem?.label || ''}
+                            onChange={e => onChange({
+                                customItem: { ...(selection.customItem || { priceTtc: 0, vatRate: 20, quantity: 1 }), label: e.target.value }
+                            })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Quantité</label>
+                        <Input
+                            type="number"
+                            className="bg-neutral-50 border-neutral-100 text-neutral-900 h-12 rounded-xl focus:bg-white focus:border-gold-500 text-xs"
+                            placeholder="1"
+                            value={selection.customItem?.quantity || ''}
+                            onChange={e => onChange({
+                                customItem: { ...(selection.customItem || { label: '', priceTtc: 0, vatRate: 20 }), quantity: parseInt(e.target.value) || 0 }
+                            })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Prix Unit. TTC (€)</label>
+                        <Input
+                            type="number"
+                            className="bg-neutral-50 border-neutral-100 text-neutral-900 h-12 rounded-xl focus:bg-white focus:border-gold-500 text-xs"
+                            placeholder="0.00"
+                            value={selection.customItem?.priceTtc || ''}
+                            onChange={e => onChange({
+                                customItem: { ...(selection.customItem || { label: '', vatRate: 20, quantity: 1 }), priceTtc: parseFloat(e.target.value) || 0 }
+                            })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">TVA (%)</label>
+                        <div className="flex p-1 bg-neutral-100 rounded-xl h-12">
+                            <button
+                                onClick={() => onChange({
+                                    customItem: { ...(selection.customItem || { label: '', priceTtc: 0, quantity: 1 }), vatRate: 10 }
+                                })}
+                                className={`flex-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${selection.customItem?.vatRate === 10 ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                            >
+                                10%
+                            </button>
+                            <button
+                                onClick={() => onChange({
+                                    customItem: { ...(selection.customItem || { label: '', priceTtc: 0, quantity: 1 }), vatRate: 20 }
+                                })}
+                                className={`flex-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${selection.customItem?.vatRate !== 10 ? 'bg-white text-gold-600 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                            >
+                                20%
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Récapitulatif du panier (Admin) */}
+            <Card className="bg-dark-900 p-8 border-none text-white shadow-2xl rounded-[2rem] space-y-6">
+                <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+                    <Utensils className="w-5 h-5 text-gold-500" />
+                    <h3 className="text-lg font-black uppercase tracking-widest">Récapitulatif de la sélection</h3>
+                </div>
+                
+                <div className="space-y-4">
+                    {[
+                        { label: 'Formules', ...cartSummary.formulas },
+                        { label: 'Boissons', ...cartSummary.drinks },
+                        { label: 'Extras', ...cartSummary.extras }
+                    ].filter(item => item.qty > 0).map(item => (
+                        <div key={item.label} className="flex justify-between items-end border-b border-white/5 pb-4 last:border-0">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-white/50">{item.label}</span>
+                                <span className="text-sm font-bold">
+                                    {item.qty} × {formatCurrency(item.total / item.qty)}
+                                </span>
+                            </div>
+                            <div className="text-xl font-black tracking-tight text-gold-500">
+                                {formatCurrency(item.total)}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="pt-4 flex justify-between items-center border-t-2 border-gold-500/30">
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-white/70">Total TTC Estimé</span>
+                    <span className="text-3xl font-black text-white">{formatCurrency(
+                        cartSummary.formulas.total + cartSummary.drinks.total + cartSummary.extras.total
+                    )}</span>
                 </div>
             </Card>
         </div>
@@ -798,92 +944,6 @@ export function LeadEditor({
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6 pt-6 border-t border-neutral-100">
-                                        <div className="flex items-center gap-3 ml-2">
-                                            <Plus className="w-4 h-4 text-gold-600" />
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-dark-900">Ajouter un champ libre (Optionnel)</h4>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                            <div className="space-y-2 md:col-span-1">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Libellé libre</label>
-                                                <Input
-                                                    className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
-                                                    placeholder="Ex: Frais de dossier..."
-                                                    value={draft.selection.customItem?.label || ''}
-                                                    onChange={e => setDraft(prev => ({
-                                                        ...prev,
-                                                        selection: {
-                                                            ...prev.selection,
-                                                            customItem: { ...(prev.selection.customItem || { priceTtc: 0, vatRate: 20, quantity: 1 }), label: e.target.value }
-                                                        }
-                                                    }))}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Quantité</label>
-                                                <Input
-                                                    type="number"
-                                                    className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
-                                                    placeholder="1"
-                                                    value={draft.selection.customItem?.quantity || ''}
-                                                    onChange={e => setDraft(prev => ({
-                                                        ...prev,
-                                                        selection: {
-                                                            ...prev.selection,
-                                                            customItem: { ...(prev.selection.customItem || { label: '', priceTtc: 0, vatRate: 20 }), quantity: parseInt(e.target.value) || 0 }
-                                                        }
-                                                    }))}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Prix Unit. TTC (€)</label>
-                                                <Input
-                                                    type="number"
-                                                    className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
-                                                    placeholder="0.00"
-                                                    value={draft.selection.customItem?.priceTtc || ''}
-                                                    onChange={e => setDraft(prev => ({
-                                                        ...prev,
-                                                        selection: {
-                                                            ...prev.selection,
-                                                            customItem: { ...(prev.selection.customItem || { label: '', vatRate: 20, quantity: 1 }), priceTtc: parseFloat(e.target.value) || 0 }
-                                                        }
-                                                    }))}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">TVA (%)</label>
-                                                <div className="flex p-1.5 bg-neutral-100 rounded-2xl h-14">
-                                                    <button
-                                                        onClick={() => setDraft(prev => ({
-                                                            ...prev,
-                                                            selection: {
-                                                                ...prev.selection,
-                                                                customItem: { ...(prev.selection.customItem || { label: '', priceTtc: 0, quantity: 1 }), vatRate: 10 }
-                                                            }
-                                                        }))}
-                                                        className={`flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${draft.selection.customItem?.vatRate === 10 ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
-                                                    >
-                                                        10%
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setDraft(prev => ({
-                                                            ...prev,
-                                                            selection: {
-                                                                ...prev.selection,
-                                                                customItem: { ...(prev.selection.customItem || { label: '', priceTtc: 0, quantity: 1 }), vatRate: 20 }
-                                                            }
-                                                        }))}
-                                                        className={`flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${draft.selection.customItem?.vatRate !== 10 ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
-                                                    >
-                                                        20%
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Commentaires Internes (Admin uniquement)</label>
                                         <textarea
@@ -912,6 +972,7 @@ export function LeadEditor({
                                 <div className="text-[11px] font-black uppercase tracking-[0.3em] text-white/80">TOTAL DEVIS ACTUEL</div>
                                 <div className="text-5xl font-black tracking-tighter tabular-nums drop-shadow-sm">{formatCurrency(quote.totalTtc)}</div>
                             </div>
+
                             <div className="pt-6 border-t border-white/20 grid grid-cols-2 gap-y-4 gap-x-8">
                                 <div>
                                     <div className="text-[9px] font-black uppercase tracking-widest text-white/60">HT Total</div>
