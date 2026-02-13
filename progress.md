@@ -1,17 +1,16 @@
-# Progress Tracker
+# Progress - Ajout des champs Société dans l'Admin
 
-## 2026-02-10
-- [x] Research availability logic in code.
-- [x] Initialize project memory files (`task.md`, `findings.md`, `gemini.md`).
-- [x] Defined the "Golden Rules" for formula availability.
-- [ ] Awaiting user confirmation or further instructions.
+## Ce qui a été fait
+- Mise à jour du `task_plan.md` pour refléter la tâche actuelle.
+- Mise à jour de `gemini.md` pour documenter le schéma `contact` complet.
+- Modification de `src/components/LeadEditor.tsx` pour inclure les nouveaux champs dans l'onglet "Coordonnées" :
+    - Adresse de la société
+    - Numéro de TVA
+    - Référence interne / N° de commande
+- Vérification que la génération PDF (`PdfDocument` et `InvoicePdfDocument`) supporte déjà l'affichage de ces champs.
 
-## 2026-02-12
-- [x] Added payment information (IBAN and transfer instructions) to the quote PDF.
-- [x] Added "Quantity" field to "Champ Libre" in LeadEditor.
-- [x] Updated Quote Engine to calculate `quantity * unitPrice` for custom items.
-- [x] Refined PDF "Details" layout and fixed unnecessary page breaks.
-- [x] Implemented version history (last 3 versions) for quotes.
-- [x] Added clickable PDF download buttons (current + history) in Admin Leads.
-- [x] Fixed issue where editor information was not pre-filled (migration to multi-formula format).
-- [x] Pushed changes to git.
+## Résultats
+L'administrateur peut maintenant saisir et modifier les informations B2B d'un devis directement depuis le dashboard. Ces informations seront automatiquement répercutées sur les devis PDF générés.
+
+## Prochaines étapes
+- Attendre le retour de l'utilisateur pour d'éventuels ajustements visuels.

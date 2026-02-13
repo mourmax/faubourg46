@@ -40,6 +40,21 @@
 }
 ```
 
+### Contact Schema (`contact`)
+```typescript
+{
+    name: string;
+    email: string;
+    phone: string;
+    isCompany: boolean;
+    company?: string;
+    address?: string;
+    vatNumber?: string;
+    internalRef?: string;
+    allergies?: string;
+}
+```
+
 ### Custom Item Schema (`customItem`)
 ```typescript
 {

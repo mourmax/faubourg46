@@ -610,6 +610,33 @@ export function LeadEditor({
                                         />
                                     </div>
                                     <div className="space-y-2 md:col-span-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Adresse de la société</label>
+                                        <Input
+                                            className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
+                                            value={draft.selection.contact.address || ''}
+                                            onChange={e => handleContactChange('address', e.target.value)}
+                                            placeholder="Adresse complète..."
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Numéro de TVA</label>
+                                        <Input
+                                            className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
+                                            value={draft.selection.contact.vatNumber || ''}
+                                            onChange={e => handleContactChange('vatNumber', e.target.value)}
+                                            placeholder="FR..."
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Référence interne / N° de commande</label>
+                                        <Input
+                                            className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
+                                            value={draft.selection.contact.internalRef || ''}
+                                            onChange={e => handleContactChange('internalRef', e.target.value)}
+                                            placeholder="REF-..."
+                                        />
+                                    </div>
+                                    <div className="space-y-2 md:col-span-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Contraintes Alimentaires</label>
                                         <Input
                                             className="bg-neutral-50 border-neutral-100 text-neutral-900 h-14 rounded-2xl focus:bg-white focus:border-gold-500"
