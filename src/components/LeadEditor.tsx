@@ -152,17 +152,28 @@ function AdminLeadMenuEditor({
                 )}
 
                 <div className="grid grid-cols-1 gap-3">
-                    {formulas.map(f => {
+                    {/* Render all formulas (Catalog + Selected but not in catalog) */}
+                    {formulas.concat(
+                        selectedFormulas
+                            .map(sf => sf.formula)
+                            .filter(sf => !formulas.find(f => f.id === sf.id))
+                    ).map(f => {
                         const { available, reason } = getAvailabilityStatus(f);
                         const qty = getFormulaQty(f.id);
                         const isSelected = qty > 0;
                         const price = getFormulaPrice(f.id);
+                        const isUnknown = !formulas.find(cat => cat.id === f.id);
 
                         return (
                             <div
                                 key={f.id}
                                 className={`p-4 border-2 rounded-xl transition-all relative overflow-hidden ${isSelected ? 'border-gold-500 bg-gold-50/20' : 'border-neutral-100 bg-neutral-50/50'} ${!available && !isSelected ? 'opacity-50 grayscale' : ''}`}
                             >
+                                {isUnknown && (
+                                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 uppercase tracking-widest rounded-sm z-10">
+                                        ARCHIVE
+                                    </div>
+                                )}
                                 {!available && (
                                     <div className="absolute top-2 right-2 flex items-center gap-1 bg-dark-900 text-white text-[7px] font-black px-1.5 py-0.5 uppercase tracking-widest rounded-sm z-10">
                                         <Clock className="w-2 h-2 text-gold-500" />
@@ -344,23 +355,34 @@ export function LeadEditor({
 
     const handleSaveChanges = async (showNotification = true) => {
         setIsSaving(true);
+        console.log('[LeadEditor] Saving changes...', draft.selection);
         try {
-            await LeadStore.updateLead(draft.id, {
+            const updatedLead = await LeadStore.updateLead(draft.id, {
                 status: draft.status,
                 selection: draft.selection
             });
-            setLead(draft);
-            onUpdate();
-            if (showNotification) {
-                setAlertState({
-                    type: 'success',
-                    title: 'Enregistré',
-                    duration: 1500 // Short duration
-                });
+
+            if (updatedLead) {
+                setLead(updatedLead);
+                setDraft(updatedLead);
+                onUpdate();
+                if (showNotification) {
+                    setAlertState({
+                        type: 'success',
+                        title: 'Enregistré',
+                        duration: 1500
+                    });
+                }
+            } else {
+                throw new Error("Le serveur n'a pas renvoyé le dossier mis à jour.");
             }
-        } catch (error) {
-            console.error(error);
-            setAlertState({ type: 'error', title: 'Erreur', message: 'Échec de sauvegarde.' });
+        } catch (error: any) {
+            console.error('[LeadEditor] Save failed:', error);
+            setAlertState({
+                type: 'error',
+                title: 'Erreur de sauvegarde',
+                message: error?.message || 'Échec de sauvegarde. Vérifiez votre connexion.'
+            });
         } finally {
             setIsSaving(false);
         }
@@ -401,12 +423,17 @@ export function LeadEditor({
         try {
             const newRef = generateReference();
 
-            // Force save with new reference before download
+            // Update draft selection with the new reference
+            const updatedSelection = {
+                ...draft.selection,
+                lastReference: newRef
+            };
+
+            // Force save with new selection before download
             setIsSaving(true);
             const updatedLead = await LeadStore.updateLead(draft.id, {
                 status: draft.status,
-                selection: draft.selection,
-                lastReference: newRef
+                selection: updatedSelection
             });
 
             if (updatedLead) {
@@ -415,7 +442,7 @@ export function LeadEditor({
                 onUpdate();
             }
 
-            const blob = await pdf(<PdfDocument selection={draft.selection} quote={quote} reference={newRef} />).toBlob();
+            const blob = await pdf(<PdfDocument selection={updatedSelection} quote={quote} reference={newRef} />).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -470,11 +497,14 @@ export function LeadEditor({
                     <h2 className="text-3xl font-black text-dark-900 uppercase tracking-tighter">Édition Demande #{lead.id}</h2>
                     <div className="flex items-center gap-4 mt-1">
                         <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-[0.2em]">Dernière mise à jour : {lead.lastUpdated.toLocaleString()}</p>
-                        {lead.lastReference && (
+                        {lead.selection.lastReference && (
                             <span className="text-[10px] font-black bg-gold-50 text-gold-600 px-3 py-1 rounded-full tracking-tighter border border-gold-100 uppercase">
-                                Version: {lead.lastReference}
+                                Réf Devis: {lead.selection.lastReference}
                             </span>
                         )}
+                        <span className="text-[10px] bg-neutral-100 px-2 rounded font-mono">
+                            Formules: {draft.selection.formulas?.length || 0}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -517,9 +547,9 @@ export function LeadEditor({
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => {
+                                    onClick={async () => {
                                         if (activeTab !== tab.id) {
-                                            handleSaveChanges(true);
+                                            await handleSaveChanges(false); // Silent save before switch
                                             setActiveTab(tab.id);
                                         }
                                     }}

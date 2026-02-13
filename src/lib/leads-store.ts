@@ -1,7 +1,6 @@
 import { databases, APPWRITE_CONFIG } from './appwrite';
 import { ID, Query } from 'appwrite';
 import type { QuoteLead, QuoteSelection, LeadComment } from './types';
-import { calculateQuoteTotal } from './quote-engine';
 
 const { databaseId, leadsCollectionId } = APPWRITE_CONFIG;
 
@@ -14,11 +13,21 @@ const mapLead = (doc: any): QuoteLead => {
     try {
         if (typeof selection === 'string') selection = JSON.parse(selection);
 
+        if (!selection) {
+            selection = {
+                contact: { name: '', email: '', phone: '' },
+                event: { date: new Date(), guests: 0, service: 'DINNER_1' },
+                formulas: [],
+                options: []
+            };
+        }
+
         // --- Migration & Defaults ---
-        if (!selection.formulas || !Array.isArray(selection.formulas)) {
-            selection.formulas = [];
+        if (!selection.formulas || !Array.isArray(selection.formulas) || (selection.formula && selection.formulas.length === 0)) {
+            if (!Array.isArray(selection.formulas)) selection.formulas = [];
             // If we have the old formula (singular) but no formulas (plural), migrate it
             if (selection.formula && selection.formulas.length === 0) {
+                console.log(`[LeadStore] Migrating old formula for lead ${doc.$id}`);
                 selection.formulas.push({
                     formula: selection.formula,
                     quantity: selection.event?.guests || 0
@@ -115,14 +124,12 @@ export const LeadStore = {
     async saveLead(selection: QuoteSelection): Promise<QuoteLead> {
         console.log('[LeadStore] Saving lead to Appwrite...');
         try {
-            const quote = calculateQuoteTotal(selection);
             const data = {
                 status: 'NEW',
                 selection: JSON.stringify(selection),
                 createdAt: new Date().toISOString(),
                 lastUpdated: new Date().toISOString(),
-                comments: JSON.stringify([]),
-                totalTtc: quote.totalTtc
+                comments: JSON.stringify([])
             };
 
             const response = await databases.createDocument(
@@ -139,6 +146,7 @@ export const LeadStore = {
     },
 
     async updateLead(id: string, updates: Partial<QuoteLead>): Promise<QuoteLead | null> {
+        console.log(`[LeadStore] Updating lead ${id}...`);
         try {
             const leadDoc = await databases.getDocument(databaseId, leadsCollectionId, id);
             const currentLead = mapLead(leadDoc);
@@ -157,14 +165,21 @@ export const LeadStore = {
                 const isDifferent = JSON.stringify(oldSelection) !== JSON.stringify(updates.selection);
 
                 if (isDifferent) {
-                    const newHistory = [oldSelection, ...history].slice(0, 3);
+                    // Create a lightweight version of the selection for history to save space
+                    const lightweightSelection = JSON.parse(JSON.stringify(oldSelection));
+                    if (lightweightSelection.formulas) {
+                        lightweightSelection.formulas.forEach((f: any) => {
+                            if (f.formula) {
+                                delete f.formula.description;
+                                delete f.formula.included;
+                            }
+                        });
+                    }
+
+                    const newHistory = [lightweightSelection, ...history].slice(0, 3);
                     data.history = JSON.stringify(newHistory);
                 }
                 data.selection = JSON.stringify(updates.selection);
-
-                // Calculate and store total for easier display in dashboard
-                const quote = calculateQuoteTotal(updates.selection);
-                data.totalTtc = quote.totalTtc;
             }
 
 
@@ -190,7 +205,7 @@ export const LeadStore = {
             return mapLead(response);
         } catch (e) {
             console.error('[LeadStore] Error updating lead', e);
-            return null;
+            throw e; // Rethrow to let the UI handle it
         }
     },
 

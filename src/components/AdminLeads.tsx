@@ -7,11 +7,9 @@ import { calculateQuoteTotal } from '../lib/quote-engine';
 import {
     Search,
     Calendar,
-
     Clock,
     MessageSquare,
     ChevronRight,
-
     Filter,
     Trash2,
     Briefcase,
@@ -20,8 +18,6 @@ import {
 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './PdfDocument';
-
-
 
 interface AdminLeadsProps {
     onEdit: (lead: QuoteLead) => void;
@@ -48,16 +44,18 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
         }
     };
 
-    const handleDownloadPdf = async (e: React.MouseEvent, selection: any, id: string, isHistory = false) => {
+    const handleDownloadPdf = async (e: React.MouseEvent, selection: any, id: string, isHistory = false, reference?: string) => {
         e.stopPropagation();
         try {
             const quote = calculateQuoteTotal(selection);
-            const blob = await pdf(<PdfDocument selection={selection} quote={quote} />).toBlob();
+            const finalRef = reference || selection.lastReference;
+            const blob = await pdf(<PdfDocument selection={selection} quote={quote} reference={finalRef} />).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             const suffix = isHistory ? '_ancienne_version' : '';
-            link.download = `Devis_Faubourg_${id}_${selection.contact.name.replace(/\s+/g, '_')}${suffix}.pdf`;
+            const filenameRef = finalRef ? `_${finalRef}` : '';
+            link.download = `Devis_Faubourg_${id}${filenameRef}_${selection.contact.name.replace(/\s+/g, '_')}${suffix}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -154,7 +152,6 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                             onClick={() => onEdit(lead)}
                         >
                             <div className="flex flex-col md:flex-row">
-                                {/* Status Side Bar */}
                                 <div className={`w-2 md:w-3 ${getStatusColor(lead.status).split(' ')[0]}`} />
 
                                 <div className="flex-1 p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center">
@@ -171,9 +168,9 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                                                 lead.status === 'WAITING' ? 'En attente' :
                                                                     lead.status === 'VALIDATED' ? 'Validé' : 'Annulé'}
                                                     </span>
-                                                    {lead.lastReference && (
+                                                    {lead.selection.lastReference && (
                                                         <span className="text-[10px] font-black bg-gold-50 text-gold-600 px-3 py-1 rounded-full tracking-tighter border border-gold-100">
-                                                            REF: {lead.lastReference}
+                                                            REF: {lead.selection.lastReference}
                                                         </span>
                                                     )}
                                                 </div>
@@ -227,19 +224,18 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                                 </div>
                                             </div>
 
-                                            {/* Devis Version Section */}
                                             <div className="space-y-2 col-span-2 border-l border-neutral-100 pl-6">
                                                 <div className="flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest">
                                                     <FileText className="w-3.5 h-3.5 text-gold-500" /> Documents
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     <button
-                                                        onClick={(e) => handleDownloadPdf(e, lead.selection, lead.id)}
+                                                        onClick={(e) => handleDownloadPdf(e, lead.selection, lead.id, false, lead.selection.lastReference)}
                                                         className="flex items-center gap-2 px-3 py-1.5 bg-gold-600 hover:bg-gold-700 text-white rounded-lg text-[9px] font-black uppercase tracking-tight transition-all shadow-sm"
                                                         title="Télécharger la version actuelle"
                                                     >
                                                         <Download className="w-3 h-3" />
-                                                        Devis Actuel {lead.lastReference && `(${lead.lastReference})`}
+                                                        Devis Actuel {lead.selection.lastReference && `(${lead.selection.lastReference})`}
                                                     </button>
 
                                                     {lead.history && lead.history.length > 0 && lead.history.map((h, idx) => (
@@ -256,7 +252,6 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                                                 </div>
                                             </div>
                                         </div>
-
                                     </div>
 
                                     <div className="flex items-center gap-3">
@@ -287,7 +282,7 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
                             </div>
                             <p className="text-neutral-600 text-xs font-bold uppercase tracking-widest max-w-sm mx-auto">
                                 {error
-                                    ? "Le client semble hors ligne ou la connexion à Firestore a échoué. Veuillez vérifier votre connexion internet."
+                                    ? "Le client semble hors ligne ou la connexion à Appwrite a échoué. Veuillez vérifier votre connexion internet."
                                     : (leads.length === 0 ? "La base de données est actuellement vide" : "Aucun résultat pour cette recherche")}
                             </p>
 

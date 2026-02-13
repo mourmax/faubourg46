@@ -90,7 +90,7 @@ export interface QuoteSelection {
         priceTtc: number;
         vatRate: VatRate;
     };
-
+    lastReference?: string;
 }
 
 export interface QuoteLead {
@@ -100,8 +100,6 @@ export interface QuoteLead {
     createdAt: Date;
     comments: LeadComment[];
     lastUpdated: Date;
-    totalTtc?: number;
-    lastReference?: string;
     history?: QuoteSelection[];
     invoice?: InvoiceData;
 }

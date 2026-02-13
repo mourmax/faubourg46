@@ -65,9 +65,18 @@ export function AdminDashboard() {
     };
 
     const handleCreateLead = async () => {
-        const newLead = await LeadStore.saveLead(INITIAL_SELECTION);
-        setEditingLead(newLead);
-        setCurrentTab('LEADS');
+        try {
+            const newLead = await LeadStore.saveLead(INITIAL_SELECTION);
+            if (newLead) {
+                setEditingLead(newLead);
+                setCurrentTab('LEADS');
+            } else {
+                alert("Erreur lors de la création du devis.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Échec de connexion au serveur.");
+        }
     };
 
     const handlePriceChange = (id: string, newPrice: number) => {
