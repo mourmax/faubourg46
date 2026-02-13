@@ -17,7 +17,6 @@ import {
     Tag,
     Percent,
     Coins,
-    Save,
     Plus,
     Minus,
     Wine,
@@ -125,51 +124,6 @@ function AdminLeadMenuEditor({
     const totalFormulaQty = selectedFormulas.reduce((sum, f) => sum + f.quantity, 0);
     const guestCount = selection.event.guests;
     const isQtyMismatch = totalFormulaQty !== guestCount;
-
-    const cartSummary = useMemo(() => {
-        const { formulas = [], options = [], customItem, event } = selection;
-        const drinkCat = catalogueChampagnes || CHAMPAGNES;
-        const extraCat = catalogueExtras || EXTRAS;
-
-        // 1. Formules
-        const fQty = formulas.reduce((sum, f) => sum + f.quantity, 0);
-        const fTotal = formulas.reduce((sum, f) => sum + (f.customPrice ?? f.formula.priceTtc) * f.quantity, 0);
-
-        // 2. Boissons (items in catalogueChampagnes)
-        const drinkItems = options.filter(opt => drinkCat.some(c => c.name === opt.name));
-        const bQty = drinkItems.reduce((sum, o) => sum + o.quantity, 0);
-        const bTotal = drinkItems.reduce((sum, o) => sum + (o.unitPriceTtc * o.quantity), 0);
-
-        // 3. Extras (items in catalogueExtras + customItem)
-        const extraItems = options.filter(opt => extraCat.some(e => e.name === opt.name));
-        let eQty = extraItems.reduce((sum, o) => {
-            if (o.name === 'Gâteau d’anniversaire') return sum + event.guests;
-            return sum + o.quantity;
-        }, 0);
-        let eTotal = extraItems.reduce((sum, o) => {
-            let up = o.unitPriceTtc;
-            if (o.name === 'DJ') {
-                const day = event.date.getDay();
-                if (day === 4 || day === 5 || day === 6) up = 0;
-            }
-            if (o.name === 'Gâteau d’anniversaire') {
-                up = 4.5;
-                return sum + (up * event.guests);
-            }
-            return sum + (up * o.quantity);
-        }, 0);
-
-        if (customItem && customItem.priceTtc > 0) {
-            eQty += (customItem.quantity || 1);
-            eTotal += customItem.priceTtc * (customItem.quantity || 1);
-        }
-
-        return {
-            formulas: { qty: fQty, total: fTotal },
-            drinks: { qty: bQty, total: bTotal },
-            extras: { qty: eQty, total: eTotal }
-        };
-    }, [selection, catalogueChampagnes, catalogueExtras]);
 
     return (
         <div className="space-y-6">
@@ -372,41 +326,6 @@ function AdminLeadMenuEditor({
                     </div>
                 </div>
             </Card>
-
-            {/* Récapitulatif du panier (Admin) */}
-            <Card className="bg-dark-900 p-8 border-none text-white shadow-2xl rounded-[2rem] space-y-6">
-                <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                    <Utensils className="w-5 h-5 text-gold-500" />
-                    <h3 className="text-lg font-black uppercase tracking-widest">Récapitulatif de la sélection</h3>
-                </div>
-                
-                <div className="space-y-4">
-                    {[
-                        { label: 'Formules', ...cartSummary.formulas },
-                        { label: 'Boissons', ...cartSummary.drinks },
-                        { label: 'Extras', ...cartSummary.extras }
-                    ].filter(item => item.qty > 0).map(item => (
-                        <div key={item.label} className="flex justify-between items-end border-b border-white/5 pb-4 last:border-0">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-white/50">{item.label}</span>
-                                <span className="text-sm font-bold">
-                                    {item.qty} × {formatCurrency(item.total / item.qty)}
-                                </span>
-                            </div>
-                            <div className="text-xl font-black tracking-tight text-gold-500">
-                                {formatCurrency(item.total)}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="pt-4 flex justify-between items-center border-t-2 border-gold-500/30">
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-white/70">Total TTC Estimé</span>
-                    <span className="text-3xl font-black text-white">{formatCurrency(
-                        cartSummary.formulas.total + cartSummary.drinks.total + cartSummary.extras.total
-                    )}</span>
-                </div>
-            </Card>
         </div>
     );
 }
@@ -433,10 +352,86 @@ export function LeadEditor({
     const [lead, setLead] = useState<QuoteLead>(initialLead);
     const [draft, setDraft] = useState<QuoteLead>(initialLead);
     const [newComment, setNewComment] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
     const [showInvoiceEditor, setShowInvoiceEditor] = useState(false);
     const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string; duration?: number } | null>(null);
     const quote = calculateQuoteTotal(draft.selection);
+
+    const cartSummary = useMemo(() => {
+        const { formulas = [], options = [], customItem, event } = draft.selection;
+        const drinkCat = catalogueChampagnes || CHAMPAGNES;
+        const extraCat = catalogueExtras || EXTRAS;
+
+        const items: { label: string; qty: number; pu: number; total: number; type: string }[] = [];
+
+        // 1. Formulas (Individual)
+        formulas.forEach(f => {
+            const qty = f.quantity;
+            if (qty > 0) {
+                const pu = f.customPrice ?? f.formula.priceTtc;
+                items.push({
+                    label: f.formula.name,
+                    qty,
+                    pu,
+                    total: qty * pu,
+                    type: 'FORMULE'
+                });
+            }
+        });
+
+        // 2. Drinks (Individual)
+        options.filter(opt => drinkCat.some(c => c.name === opt.name)).forEach(o => {
+            if (o.quantity > 0) {
+                items.push({
+                    label: o.name,
+                    qty: o.quantity,
+                    pu: o.unitPriceTtc,
+                    total: o.quantity * o.unitPriceTtc,
+                    type: 'BOISSON'
+                });
+            }
+        });
+
+        // 3. Extras (Individual)
+        options.filter(opt => extraCat.some(e => e.name === opt.name)).forEach(o => {
+            if (o.quantity > 0 || o.name === 'Gâteau d’anniversaire') {
+                let qty = o.quantity;
+                let pu = o.unitPriceTtc;
+                
+                if (o.name === 'DJ') {
+                    const day = draft.selection.event.date.getDay();
+                    if (day === 4 || day === 5 || day === 6) pu = 0;
+                }
+                
+                if (o.name === 'Gâteau d’anniversaire') {
+                    qty = event.guests;
+                    pu = 4.5;
+                }
+
+                if (qty > 0) {
+                    items.push({
+                        label: o.name,
+                        qty,
+                        pu,
+                        total: qty * pu,
+                        type: 'EXTRA'
+                    });
+                }
+            }
+        });
+
+        // 4. Custom Item
+        if (customItem && customItem.priceTtc !== 0) {
+            items.push({
+                label: customItem.label || 'Champ Libre',
+                qty: customItem.quantity || 1,
+                pu: customItem.priceTtc,
+                total: (customItem.quantity || 1) * customItem.priceTtc,
+                type: 'EXTRA'
+            });
+        }
+
+        return items;
+    }, [draft.selection, catalogueChampagnes, catalogueExtras]);
 
     const tabs = [
         { id: 'CONTACT', label: 'Coordonnées', icon: User },
@@ -500,7 +495,6 @@ export function LeadEditor({
     };
 
     const handleSaveChanges = async (showNotification = true) => {
-        setIsSaving(true);
         console.log('[LeadEditor] Saving changes...', draft.selection);
         try {
             const updatedLead = await LeadStore.updateLead(draft.id, {
@@ -529,8 +523,6 @@ export function LeadEditor({
                 title: 'Erreur de sauvegarde',
                 message: error?.message || 'Échec de sauvegarde. Vérifiez votre connexion.'
             });
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -547,7 +539,6 @@ export function LeadEditor({
     };
 
     const handleSaveInvoice = async (invoiceData: InvoiceData) => {
-        setIsSaving(true);
         try {
             await LeadStore.updateLead(draft.id, {
                 invoice: invoiceData
@@ -560,8 +551,6 @@ export function LeadEditor({
         } catch (error) {
             console.error(error);
             setAlertState({ type: 'error', title: 'Erreur de sauvegarde', message: 'Impossible d\'enregistrer la facture.' });
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -576,7 +565,6 @@ export function LeadEditor({
             };
 
             // Force save with new selection before download
-            setIsSaving(true);
             const updatedLead = await LeadStore.updateLead(draft.id, {
                 status: draft.status,
                 selection: updatedSelection
@@ -605,8 +593,6 @@ export function LeadEditor({
         } catch (e) {
             console.error("PDF Error", e);
             setAlertState({ type: 'error', title: 'Erreur', message: 'Échec de génération du devis.' });
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -617,9 +603,9 @@ export function LeadEditor({
                 <InvoicePdfDocument
                     selection={draft.selection}
                     invoice={draft.invoice}
-                    quoteTotals={quote}
                 />
             ).toBlob();
+
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -718,9 +704,6 @@ export function LeadEditor({
                                         <User className="w-6 h-6 text-gold-600" />
                                         <h3 className="text-lg font-black text-dark-900 uppercase tracking-widest">Coordonnées Client</h3>
                                     </div>
-                                    <Button onClick={() => handleSaveChanges(true)} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
-                                        <Save className="w-4 h-4 mr-2" /> {isSaving ? 'EN COURS...' : 'ENREGISTRER'}
-                                    </Button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
@@ -801,9 +784,6 @@ export function LeadEditor({
                                         <Calendar className="w-6 h-6 text-gold-600" />
                                         <h3 className="text-lg font-black text-dark-900 uppercase tracking-widest">Paramètres Événement</h3>
                                     </div>
-                                    <Button onClick={() => handleSaveChanges(true)} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
-                                        <Save className="w-4 h-4 mr-2" /> {isSaving ? 'EN COURS...' : 'ENREGISTRER'}
-                                    </Button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-2 flex flex-col">
@@ -859,12 +839,6 @@ export function LeadEditor({
                                     catalogueChampagnes={catalogueChampagnes}
                                     catalogueExtras={catalogueExtras}
                                 />
-                                <div className="p-2">
-                                    <Button onClick={() => handleSaveChanges(true)} disabled={isSaving} className="w-full h-16 text-sm font-black gold-gradient text-white gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-2xl border-none">
-                                        <Save className="w-6 h-6" />
-                                        {isSaving ? 'ENREGISTREMENT...' : 'SAUVEGARDER LE MENU'}
-                                    </Button>
-                                </div>
                             </div>
                         )}
 
@@ -875,9 +849,6 @@ export function LeadEditor({
                                         <Tag className="w-6 h-6 text-gold-600" />
                                         <h3 className="text-lg font-black text-dark-900 uppercase tracking-widest">Remise & Notes Internes</h3>
                                     </div>
-                                    <Button onClick={() => handleSaveChanges(true)} disabled={isSaving} className="h-10 px-6 text-[10px] font-black gold-gradient transition-all border-none">
-                                        <Save className="w-4 h-4 mr-2" /> {isSaving ? 'EN COURS...' : 'ENREGISTRER'}
-                                    </Button>
                                 </div>
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -962,6 +933,43 @@ export function LeadEditor({
 
                 {/* Right Sidebar: Totals & Comments */}
                 <div className="space-y-8">
+                    {/* Detailed Selection Summary (Basket) */}
+                    {cartSummary.length > 0 && (
+                        <Card className="bg-dark-900 p-8 border-none text-white shadow-2xl rounded-[2.5rem] space-y-6">
+                            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+                                <Utensils className="w-5 h-5 text-gold-500" />
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.2em]">Détail du panier</h3>
+                            </div>
+                            
+                            <div className="space-y-5 max-h-[450px] overflow-y-auto pr-3 custom-scrollbar">
+                                {cartSummary.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-start gap-4 group pb-4 border-b border-white/5 last:border-0 last:pb-0">
+                                        <div className="flex flex-col min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-sm tracking-widest ${
+                                                    item.type === 'FORMULE' ? 'bg-gold-600 text-white' : 
+                                                    item.type === 'BOISSON' ? 'bg-blue-600 text-white' : 
+                                                    'bg-neutral-600 text-white'
+                                                }`}>
+                                                    {item.type}
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] font-black text-white/95 uppercase leading-tight">
+                                                {item.label}
+                                            </span>
+                                            <span className="text-[10px] font-bold text-white/40 mt-1.5 tabular-nums">
+                                                {item.qty} × {formatCurrency(item.pu)}
+                                            </span>
+                                        </div>
+                                        <div className="text-sm font-black tracking-tight text-gold-500 whitespace-nowrap pt-5 tabular-nums">
+                                            {formatCurrency(item.total)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
+
                     {/* Financial Summary */}
                     <Card className="gold-gradient p-8 border-none text-white shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10">

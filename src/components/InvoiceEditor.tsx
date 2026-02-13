@@ -68,7 +68,30 @@ export function InvoiceEditor({ existingInvoice, quoteSelection, onSave, onCance
             }
         });
 
+        // Add discount if exists
+        if (quoteSelection.discount && quoteSelection.discount.value > 0) {
+            const subtotalTtc = quoteItems.reduce((sum, item) => sum + item.totalTtc, 0);
+            const discountAmount = quoteSelection.discount.type === 'PERCENT'
+                ? subtotalTtc * (quoteSelection.discount.value / 100)
+                : quoteSelection.discount.value;
+
+            if (discountAmount > 0) {
+                const discountHt = discountAmount / 1.1; // Default to 10% VAT for discount
+                quoteItems.push({
+                    id: 'discount',
+                    description: `Remise ${quoteSelection.discount.type === 'PERCENT' ? `(${quoteSelection.discount.value}%)` : ''}`,
+                    quantity: 1,
+                    unitPriceHt: -discountHt,
+                    vatRate: 10,
+                    totalHt: -discountHt,
+                    totalTva: -(discountAmount - discountHt),
+                    totalTtc: -discountAmount
+                });
+            }
+        }
+
         return {
+
             invoiceNumber: '',
             invoiceDate: new Date(),
             customItems: quoteItems,

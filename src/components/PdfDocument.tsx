@@ -1,6 +1,8 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import type { QuoteSelection } from '../lib/types';
 import { calculateQuoteTotal } from '../lib/quote-engine';
+import { formatCurrency } from '../lib/utils';
+
 
 // Register fonts if needed, otherwise use standard
 // Font.register({ family: 'Roboto', src: '...' });
@@ -33,11 +35,8 @@ const styles = StyleSheet.create({
     footer: { position: 'absolute', bottom: 30, left: 40, right: 40, fontSize: 8, textAlign: 'center', color: '#999' }
 });
 
-const formatCurrency = (amount: number) => {
-    // Replace non-breaking spaces (\u00a0) and narrow non-breaking spaces (\u202f) with regular spaces
-    return amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
-        .replace(/[\u00a0\u202f]/g, ' ');
-};
+// formatCurrency imported from ../lib/utils
+
 
 interface PdfDocumentProps {
     selection: QuoteSelection;

@@ -162,7 +162,7 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
     });
 
     // 3.5 Process Custom Item (Champs Libre)
-    if (selection.customItem && selection.customItem.priceTtc > 0) {
+    if (selection.customItem && selection.customItem.priceTtc !== 0) {
         const { priceTtc, vatRate, quantity = 1 } = selection.customItem;
         const totalLineTtc = priceTtc * quantity;
         totalTtc += totalLineTtc;

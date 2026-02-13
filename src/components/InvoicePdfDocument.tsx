@@ -37,9 +37,9 @@ interface InvoicePdfProps {
     };
 }
 
-export function InvoicePdfDocument({ selection, invoice, quoteTotals }: InvoicePdfProps) {
-    // Calculate custom items totals
-    const customTotals = invoice.customItems.reduce((acc, item) => {
+export function InvoicePdfDocument({ selection, invoice }: Omit<InvoicePdfProps, 'quoteTotals'>) {
+    // Calculate totals ONLY from custom items as they now contain all quote items
+    const totals = invoice.customItems.reduce((acc, item) => {
         if (item.vatRate === 10) {
             acc.ht10 += item.totalHt;
             acc.tva10 += item.totalTva;
@@ -51,13 +51,13 @@ export function InvoicePdfDocument({ selection, invoice, quoteTotals }: InvoiceP
         return acc;
     }, { ht10: 0, tva10: 0, ht20: 0, tva20: 0, totalTtc: 0 });
 
-    // Combine quote and custom items
-    const totalHt = quoteTotals.totalHt + customTotals.ht10 + customTotals.ht20;
-    const totalTva10 = quoteTotals.breakdown.vat10.tva + customTotals.tva10;
-    const totalTva20 = quoteTotals.breakdown.vat20.tva + customTotals.tva20;
+    const totalHt = totals.ht10 + totals.ht20;
+    const totalTva10 = totals.tva10;
+    const totalTva20 = totals.tva20;
     const totalTva = totalTva10 + totalTva20;
-    const totalTtc = quoteTotals.totalTtc + customTotals.totalTtc;
+    const totalTtc = totals.totalTtc;
     const balanceDue = totalTtc - (invoice.depositReceived ? (invoice.depositAmount || 0) : 0);
+
 
     return (
         <Document>
@@ -116,35 +116,7 @@ export function InvoicePdfDocument({ selection, invoice, quoteTotals }: InvoiceP
                         <Text style={[styles.colTotal, { fontWeight: 'bold' }]}>Total TTC</Text>
                     </View>
 
-                    {/* Formula */}
-                    <View style={styles.tableRow}>
-                        <Text style={styles.colDesc}>Formule: {selection.formula.name} {selection.event.childrenGuests ? '(Adulte)' : ''}</Text>
-                        <Text style={styles.colQty}>{selection.event.guests}</Text>
-                        <Text style={styles.colPrice}>{formatCurrency(selection.formula.priceTtc)}</Text>
-                        <Text style={styles.colTotal}>{formatCurrency(selection.formula.priceTtc * selection.event.guests)}</Text>
-                    </View>
-
-                    {/* Children Formula */}
-                    {selection.formula.id.includes('BRUNCH') && selection.event.childrenGuests && selection.event.childrenGuests > 0 && (
-                        <View style={styles.tableRow}>
-                            <Text style={styles.colDesc}>Formule: Brunch (Enfant -12 ans)</Text>
-                            <Text style={styles.colQty}>{selection.event.childrenGuests}</Text>
-                            <Text style={styles.colPrice}>{formatCurrency(16.00)}</Text>
-                            <Text style={styles.colTotal}>{formatCurrency(16.00 * selection.event.childrenGuests)}</Text>
-                        </View>
-                    )}
-
-                    {/* Options */}
-                    {selection.options.map((opt, i) => (
-                        <View key={i} style={styles.tableRow}>
-                            <Text style={styles.colDesc}>{opt.name}</Text>
-                            <Text style={styles.colQty}>{opt.quantity}</Text>
-                            <Text style={styles.colPrice}>{formatCurrency(opt.unitPriceTtc)}</Text>
-                            <Text style={styles.colTotal}>{formatCurrency(opt.totalTtc)}</Text>
-                        </View>
-                    ))}
-
-                    {/* Custom Items */}
+                    {/* Custom Items (Initialed with quote items) */}
                     {invoice.customItems.map((item, i) => (
                         <View key={i} style={styles.tableRow}>
                             <Text style={styles.colDesc}>{item.description}</Text>
@@ -154,6 +126,7 @@ export function InvoicePdfDocument({ selection, invoice, quoteTotals }: InvoiceP
                         </View>
                     ))}
                 </View>
+
 
                 {/* Totals */}
                 <View style={styles.totalsSection}>
