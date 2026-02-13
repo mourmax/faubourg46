@@ -117,7 +117,7 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
                                                 {sf.quantity}x {sf.formula.name}
                                             </div>
                                         ))}
-                                        {(!selection.formulas || selection.formulas.length === 0) && (
+                                        {(!selection.formulas || selection.formulas.length === 0) && formula && (
                                             <div className="text-2xl font-black text-neutral-900 leading-tight uppercase tracking-tighter">
                                                 {formula.name}
                                             </div>

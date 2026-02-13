@@ -72,7 +72,7 @@ export interface QuoteSelection {
         guests: number;
         childrenGuests?: number;
     };
-    formula: FormulaDefinition;
+    formula?: FormulaDefinition;
     formulas: SelectedFormula[];
     options: QuoteItem[];
     discount?: {

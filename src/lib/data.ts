@@ -178,7 +178,6 @@ export const INITIAL_SELECTION: QuoteSelection = {
         allergies: ''
     },
     event: { date: new Date(), service: 'DINNER_1', guests: 10 },
-    formula: FORMULAS[0],
     formulas: [],
     options: []
 };

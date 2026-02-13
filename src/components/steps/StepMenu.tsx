@@ -15,7 +15,7 @@ interface StepMenuProps {
 }
 
 export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }: StepMenuProps) {
-    const { formula, options, event } = selection;
+    const { options, event } = selection;
     const { t } = useLanguage();
 
     const getAvailabilityStatus = (f: FormulaDefinition): { available: boolean; reason?: string } => {
@@ -325,7 +325,7 @@ export function StepMenu({ selection, formulas, onChange, onNext, onPrev, mode }
                     onClick={onNext}
                     disabled={
                         mode === 'formulas' && (
-                            !formula.id ||
+                            (!selection.formulas || selection.formulas.length === 0) ||
                             (selection.formulas || []).reduce((sum, f) => sum + f.quantity, 0) !== event.guests
                         )
                     }
