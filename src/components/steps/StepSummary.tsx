@@ -9,6 +9,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 import { useRef, useEffect } from 'react';
 import { LeadStore } from '../../lib/leads-store';
+import { SettingsStore } from '../../lib/settings-store';
+import { sendNotificationEmail } from '../../lib/notifications';
 
 interface StepSummaryProps {
     selection: QuoteSelection;
@@ -22,14 +24,33 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
     const hasSaved = useRef(false);
 
     useEffect(() => {
-        const saveAsync = async () => {
+        const saveAndNotify = async () => {
             if (!hasSaved.current) {
-                await LeadStore.saveLead(selection);
+                // 1. Save Lead
+                const newLead = await LeadStore.saveLead(selection);
+                
+                if (newLead) {
+                    // 2. Fetch Settings
+                    const settings = await SettingsStore.getSettings();
+                    
+                    // 3. Generate PDF for attachment
+                    let pdfBlob: Blob | undefined;
+                    try {
+                        pdfBlob = await pdf(<PdfDocument selection={selection} quote={quote} />).toBlob();
+                    } catch (e) {
+                        console.error('Failed to generate PDF for notification', e);
+                    }
+
+                    // 4. Send Email Notification
+                    await sendNotificationEmail(selection, settings, pdfBlob);
+                }
+                
                 hasSaved.current = true;
             }
         };
-        saveAsync();
-    }, [selection]);
+        saveAndNotify();
+    }, [selection, quote]);
+
 
     const handleDownload = async () => {
         try {

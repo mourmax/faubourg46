@@ -49,20 +49,31 @@ export function AdminDashboard() {
         const newStatus = !currentStatus;
 
         // If settings doesn't exist yet, we create a default object
-        const updatedSettings = {
-            ...(settings || { whatsappNumber: '33600000000' }), // Default dummy number
-            whatsappEnabled: newStatus
+        const updatedSettings: AppSettings = {
+            whatsappEnabled: newStatus,
+            whatsappNumber: settings?.whatsappNumber || '33600000000',
+            notificationEmail: settings?.notificationEmail || 'matis@example.com',
+            emailJsPublicKey: settings?.emailJsPublicKey || '',
+            emailJsTemplateId: settings?.emailJsTemplateId || ''
         };
 
         await SettingsStore.updateSettings({ whatsappEnabled: newStatus });
         setSettings(updatedSettings);
     };
 
+
     const handleUpdateWhatsappNumber = async (num: string) => {
         if (!settings) return;
         await SettingsStore.updateSettings({ whatsappNumber: num });
         setSettings({ ...settings, whatsappNumber: num });
     };
+
+    const handleUpdateSettings = async (updates: Partial<AppSettings>) => {
+        if (!settings) return;
+        await SettingsStore.updateSettings(updates);
+        setSettings({ ...settings, ...updates });
+    };
+
 
     const handleCreateLead = async () => {
         try {
@@ -227,10 +238,60 @@ export function AdminDashboard() {
                                                 onChange={(e) => handleUpdateWhatsappNumber(e.target.value)}
                                                 placeholder="336..."
                                             />
-                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="bg-white p-10 rounded-[3rem] shadow-2xl shadow-dark-900/5 space-y-8 border border-neutral-100">
+                                <div className="flex items-center gap-4 border-b border-neutral-100 pb-6">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                                        <Database className="w-6 h-6 text-blue-600" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-dark-900 uppercase tracking-widest">Notifications Email (EmailJS)</h3>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-2">Email de réception</label>
+                                        <input
+                                            className="w-full h-14 bg-white border border-neutral-200 rounded-2xl px-6 text-dark-900 font-black focus:border-gold-500 focus:ring-4 focus:ring-gold-500/5 outline-none transition-all placeholder:text-neutral-300"
+                                            value={settings?.notificationEmail || ''}
+                                            onChange={(e) => handleUpdateSettings({ notificationEmail: e.target.value })}
+                                            placeholder="votre@email.com"
+                                        />
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-2">Public Key (User ID)</label>
+                                            <input
+                                                className="w-full h-14 bg-white border border-neutral-200 rounded-2xl px-6 text-dark-900 font-black focus:border-gold-500 focus:ring-4 focus:ring-gold-500/5 outline-none transition-all placeholder:text-neutral-300 text-xs"
+                                                value={settings?.emailJsPublicKey || ''}
+                                                onChange={(e) => handleUpdateSettings({ emailJsPublicKey: e.target.value })}
+                                                placeholder="pk_..."
+                                            />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-2">Template ID</label>
+                                            <input
+                                                className="w-full h-14 bg-white border border-neutral-200 rounded-2xl px-6 text-dark-900 font-black focus:border-gold-500 focus:ring-4 focus:ring-gold-500/5 outline-none transition-all placeholder:text-neutral-300 text-xs"
+                                                value={settings?.emailJsTemplateId || ''}
+                                                onChange={(e) => handleUpdateSettings({ emailJsTemplateId: e.target.value })}
+                                                placeholder="template_..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
+                                        <p className="text-[10px] text-blue-800 font-bold uppercase tracking-widest leading-relaxed">
+                                            ℹ️ Service ID utilisé : <code className="bg-blue-100 px-1 rounded">service_54e2uef</code>.
+                                            Assurez-vous que vos variables de template EmailJS correspondent à : <code className="bg-blue-100 px-1 rounded">client_name</code>, <code className="bg-blue-100 px-1 rounded">client_email</code>, <code className="bg-blue-100 px-1 rounded">summary_html</code>, etc.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         </div>
                     ) : (
                         <AdminLeads key={refreshTrigger} onEdit={setEditingLead} />

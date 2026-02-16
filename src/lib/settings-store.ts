@@ -6,7 +6,10 @@ const GLOBAL_SETTINGS_ID = 'global';
 
 const DEFAULT_SETTINGS: AppSettings = {
     whatsappEnabled: true,
-    whatsappNumber: '33650154641'
+    whatsappNumber: '33650154641',
+    notificationEmail: 'matis@example.com',
+    emailJsPublicKey: '',
+    emailJsTemplateId: ''
 };
 
 export const SettingsStore = {
@@ -15,9 +18,13 @@ export const SettingsStore = {
             const doc = await databases.getDocument(databaseId, settingsCollectionId, GLOBAL_SETTINGS_ID);
             return {
                 whatsappEnabled: doc.whatsappEnabled,
-                whatsappNumber: doc.whatsappNumber
+                whatsappNumber: doc.whatsappNumber,
+                notificationEmail: doc.notificationEmail || DEFAULT_SETTINGS.notificationEmail,
+                emailJsPublicKey: doc.emailJsPublicKey || DEFAULT_SETTINGS.emailJsPublicKey,
+                emailJsTemplateId: doc.emailJsTemplateId || DEFAULT_SETTINGS.emailJsTemplateId
             };
         } catch (e: any) {
+
             if (e.code === 404) {
                 // Initialize if not exists
                 try {

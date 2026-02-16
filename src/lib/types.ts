@@ -129,4 +129,8 @@ export interface InvoiceData {
 export interface AppSettings {
     whatsappEnabled: boolean;
     whatsappNumber: string;
+    notificationEmail: string;
+    emailJsPublicKey: string;
+    emailJsTemplateId: string;
 }
+
