@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/components';
-import { LogOut, LayoutDashboard, Database, Briefcase, Plus, Settings, MessageCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, Database, Briefcase, Plus, Settings, MessageCircle, Save, Loader2 } from 'lucide-react';
 import { FORMULAS as INITIAL_FORMULAS, CHAMPAGNES as INITIAL_CHAMPAGNES, EXTRAS as INITIAL_EXTRAS, INITIAL_SELECTION } from '../lib/data';
 import type { FormulaDefinition, QuoteItem, QuoteLead, AppSettings } from '../lib/types';
 import { AdminCatalogue } from './AdminCatalogue';
@@ -19,6 +19,8 @@ export function AdminDashboard() {
     const [editingLead, setEditingLead] = useState<QuoteLead | null>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [settings, setSettings] = useState<AppSettings | null>(null);
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
+
 
     const [formulas, setFormulas] = useState<FormulaDefinition[]>(() => {
         const saved = localStorage.getItem('faubourg_formulas');
@@ -65,13 +67,25 @@ export function AdminDashboard() {
     const handleUpdateWhatsappNumber = (num: string) => {
         if (!settings) return;
         setSettings({ ...settings, whatsappNumber: num });
-        SettingsStore.updateSettings({ whatsappNumber: num });
     };
 
     const handleUpdateSettings = (updates: Partial<AppSettings>) => {
         if (!settings) return;
         setSettings({ ...settings, ...updates });
-        SettingsStore.updateSettings(updates);
+    };
+
+    const handleSaveSettings = async () => {
+        if (!settings) return;
+        setIsSavingSettings(true);
+        try {
+            await SettingsStore.updateSettings(settings);
+            alert('Réglages sauvegardés avec succès !');
+        } catch (error) {
+            console.error(error);
+            alert('Erreur lors de la sauvegarde des réglages.');
+        } finally {
+            setIsSavingSettings(false);
+        }
     };
 
 
@@ -287,6 +301,21 @@ export function AdminDashboard() {
                                             ℹ️ Service ID utilisé : <code className="bg-blue-100 px-1 rounded">service_54e2uef</code>.
                                             Assurez-vous que vos variables de template EmailJS correspondent à : <code className="bg-blue-100 px-1 rounded">client_name</code>, <code className="bg-blue-100 px-1 rounded">client_email</code>, <code className="bg-blue-100 px-1 rounded">summary_html</code>, etc.
                                         </p>
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <Button
+                                            onClick={handleSaveSettings}
+                                            disabled={isSavingSettings}
+                                            className="w-full h-16 text-sm font-black uppercase tracking-widest gold-gradient text-white gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-[1.5rem] border-none"
+                                        >
+                                            {isSavingSettings ? (
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                            ) : (
+                                                <Save className="w-5 h-5" />
+                                            )}
+                                            {isSavingSettings ? 'SAUVEGARDE...' : 'ENREGISTRER LES RÉGLAGES'}
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
