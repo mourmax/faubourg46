@@ -26,18 +26,36 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
     useEffect(() => {
         const saveAndNotify = async () => {
             if (!hasSaved.current) {
-                // 1. Save Lead
-                const newLead = await LeadStore.saveLead(selection);
-                
-                if (newLead) {
-                    // 2. Fetch Settings
-                    const settings = await SettingsStore.getSettings();
-                    
-                    // 3. Send Email Notification
-                    await sendNotificationEmail(selection, newLead.id, settings);
+                try {
+                    console.log('[StepSummary] Saving lead...');
+
+                    // 1. Save Lead - retourne l'ID directement
+                    const leadId = await LeadStore.saveLead(selection);
+
+                    if (leadId) {
+                        console.log('[StepSummary] Lead saved with ID:', leadId);
+
+                        // 2. Fetch Settings
+                        const settings = await SettingsStore.getSettings();
+                        console.log('[StepSummary] Settings retrieved:', {
+                            hasEmail: !!settings.notificationEmail,
+                            hasServiceId: !!settings.emailJsServiceId,
+                            hasPublicKey: !!settings.emailJsPublicKey,
+                            hasTemplateId: !!settings.emailJsTemplateId,
+                            hasPrivateKey: !!settings.emailJsPrivateKey
+                        });
+
+                        // 3. Send Email Notification
+                        await sendNotificationEmail(selection, leadId, settings);
+                        console.log('[StepSummary] Notification process completed');
+                    } else {
+                        console.error('[StepSummary] Failed to save lead - no ID returned');
+                    }
+
+                    hasSaved.current = true;
+                } catch (error) {
+                    console.error('[StepSummary] Error in saveAndNotify:', error);
                 }
-                
-                hasSaved.current = true;
             }
         };
         saveAndNotify();

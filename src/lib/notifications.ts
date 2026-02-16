@@ -15,8 +15,16 @@ export const sendNotificationEmail = async (
 ) => {
     console.log('[Notification] Preparing to send email...', { leadId, email: settings.notificationEmail });
     
-    if (!settings.emailJsPublicKey || !settings.emailJsTemplateId || !settings.emailJsServiceId) {
-        console.warn('[Notification] EmailJS credentials missing, skipping email.', settings);
+    if (!settings.emailJsPublicKey || !settings.emailJsTemplateId || 
+        !settings.emailJsServiceId || !settings.notificationEmail || 
+        !settings.emailJsPrivateKey) {
+        console.warn('[Notification] EmailJS credentials incomplete:', {
+            hasPublicKey: !!settings.emailJsPublicKey,
+            hasTemplateId: !!settings.emailJsTemplateId,
+            hasServiceId: !!settings.emailJsServiceId,
+            hasEmail: !!settings.notificationEmail,
+            hasPrivateKey: !!settings.emailJsPrivateKey
+        });
         return;
     }
 
