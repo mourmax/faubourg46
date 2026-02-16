@@ -10,7 +10,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     notificationEmail: 'matis@example.com',
     emailJsPublicKey: '',
     emailJsTemplateId: '',
-    emailJsServiceId: 'service_54e2uef'
+    emailJsServiceId: 'service_54e2uef',
+    emailJsPrivateKey: ''
 };
 
 export const SettingsStore = {
@@ -23,7 +24,8 @@ export const SettingsStore = {
                 notificationEmail: doc.notificationEmail || DEFAULT_SETTINGS.notificationEmail,
                 emailJsPublicKey: doc.emailJsPublicKey || DEFAULT_SETTINGS.emailJsPublicKey,
                 emailJsTemplateId: doc.emailJsTemplateId || DEFAULT_SETTINGS.emailJsTemplateId,
-                emailJsServiceId: doc.emailJsServiceId || DEFAULT_SETTINGS.emailJsServiceId
+                emailJsServiceId: doc.emailJsServiceId || DEFAULT_SETTINGS.emailJsServiceId,
+                emailJsPrivateKey: doc.emailJsPrivateKey || DEFAULT_SETTINGS.emailJsPrivateKey
             };
         } catch (e: any) {
 

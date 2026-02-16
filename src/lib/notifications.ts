@@ -10,6 +10,7 @@ export const sendNotificationEmail = async (
         emailJsPublicKey: string;
         emailJsTemplateId: string;
         emailJsServiceId: string;
+        emailJsPrivateKey: string;
     }
 ) => {
     console.log('[Notification] Preparing to send email...', { leadId, email: settings.notificationEmail });
@@ -86,6 +87,7 @@ export const sendNotificationEmail = async (
             service_id: settings.emailJsServiceId,
             template_id: settings.emailJsTemplateId,
             user_id: settings.emailJsPublicKey,
+            accessToken: settings.emailJsPrivateKey, // Use accessToken for authentication
             template_params: templateParams
         };
 

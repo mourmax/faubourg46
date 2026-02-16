@@ -133,5 +133,6 @@ export interface AppSettings {
     emailJsPublicKey: string;
     emailJsTemplateId: string;
     emailJsServiceId: string;
+    emailJsPrivateKey: string;
 }
 

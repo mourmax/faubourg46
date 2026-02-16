@@ -57,7 +57,8 @@ export function AdminDashboard() {
             notificationEmail: settings?.notificationEmail || 'matis@example.com',
             emailJsPublicKey: settings?.emailJsPublicKey || '',
             emailJsTemplateId: settings?.emailJsTemplateId || '',
-            emailJsServiceId: settings?.emailJsServiceId || 'service_54e2uef'
+            emailJsServiceId: settings?.emailJsServiceId || 'service_54e2uef',
+            emailJsPrivateKey: settings?.emailJsPrivateKey || ''
         };
 
         setSettings(updatedSettings);
@@ -303,6 +304,17 @@ export function AdminDashboard() {
                                                 placeholder="template_..."
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-2">Private Key (Access Token)</label>
+                                        <input
+                                            type="password"
+                                            className="w-full h-14 bg-white border border-neutral-200 rounded-2xl px-6 text-dark-900 font-black focus:border-gold-500 focus:ring-4 focus:ring-gold-500/5 outline-none transition-all placeholder:text-neutral-300 text-xs"
+                                            value={settings?.emailJsPrivateKey || ''}
+                                            onChange={(e) => handleUpdateSettings({ emailJsPrivateKey: e.target.value })}
+                                            placeholder="Indispensable si configuré sur EmailJS"
+                                        />
                                     </div>
 
                                     <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
