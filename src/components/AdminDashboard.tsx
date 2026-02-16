@@ -43,7 +43,7 @@ export function AdminDashboard() {
         }
     }, [isAuthenticated, navigate]);
 
-    const handleToggleWhatsapp = async () => {
+    const handleToggleWhatsapp = () => {
         // Ensure settings exists, default to disabled if not
         const currentStatus = settings?.whatsappEnabled ?? false;
         const newStatus = !currentStatus;
@@ -57,21 +57,21 @@ export function AdminDashboard() {
             emailJsTemplateId: settings?.emailJsTemplateId || ''
         };
 
-        await SettingsStore.updateSettings({ whatsappEnabled: newStatus });
         setSettings(updatedSettings);
+        SettingsStore.updateSettings({ whatsappEnabled: newStatus });
     };
 
 
-    const handleUpdateWhatsappNumber = async (num: string) => {
+    const handleUpdateWhatsappNumber = (num: string) => {
         if (!settings) return;
-        await SettingsStore.updateSettings({ whatsappNumber: num });
         setSettings({ ...settings, whatsappNumber: num });
+        SettingsStore.updateSettings({ whatsappNumber: num });
     };
 
-    const handleUpdateSettings = async (updates: Partial<AppSettings>) => {
+    const handleUpdateSettings = (updates: Partial<AppSettings>) => {
         if (!settings) return;
-        await SettingsStore.updateSettings(updates);
         setSettings({ ...settings, ...updates });
+        SettingsStore.updateSettings(updates);
     };
 
 
