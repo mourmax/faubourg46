@@ -55,6 +55,7 @@
 }
 ```
 
+
 ### Custom Item Schema (`customItem`)
 ```typescript
 {
@@ -64,4 +65,14 @@
     vatRate: 10 | 20;
 }
 ```
+
+## Maintenance Log
+
+### 2026-02-16
+- **Task:** Ajout des champs Société dans l'Admin.
+- **Changes:**
+    - Exposer `address`, `vatNumber`, et `internalRef` dans le `LeadEditor.tsx`.
+    - Synchronisation des notifications avec les clés EmailJS via `SettingsStore`.
+    - Amélioration de la traçabilité des logs dans `StepSummary.tsx`.
+- **Status:** Completed.
 
