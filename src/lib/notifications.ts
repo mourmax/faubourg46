@@ -4,12 +4,12 @@ import { calculateQuoteTotal } from './quote-engine';
 
 export const sendNotificationEmail = async (
     selection: QuoteSelection,
+    leadId: string,
     settings: {
         notificationEmail: string;
         emailJsPublicKey: string;
         emailJsTemplateId: string;
-    },
-    pdfBlob?: Blob
+    }
 ) => {
     if (!settings.emailJsPublicKey || !settings.emailJsTemplateId) {
         console.warn('[Notification] EmailJS credentials missing, skipping email.');
@@ -17,6 +17,7 @@ export const sendNotificationEmail = async (
     }
 
     const quote = calculateQuoteTotal(selection);
+    const downloadUrl = `${window.location.origin}/devis/${leadId}`;
     
     // Format individual items breakdown
     const formulasHtml = selection.formulas
@@ -53,21 +54,16 @@ export const sendNotificationEmail = async (
             <div style="margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
                 <p><strong>Notes Internes:</strong> ${selection.internalNotes || 'Aucune'}</p>
             </div>
+
+            <div style="margin-top: 30px; text-align: center; border-top: 2px solid #af8936; padding-top: 20px;">
+                <p style="margin-bottom: 20px;">Le devis complet au format PDF est disponible via le lien ci-dessous :</p>
+                <a href="${downloadUrl}" style="background-color: #af8936; color: white; padding: 15px 30px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; font-size: 16px;">
+                    Télécharger le Devis PDF
+                </a>
+                <p style="font-size: 10px; color: #999; margin-top: 15px;">Lien direct : <br/> ${downloadUrl}</p>
+            </div>
         </div>
     `;
-
-    // Convert PDF Blob to base64 if provided
-    let pdfBase64 = '';
-    if (pdfBlob) {
-        pdfBase64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64data = reader.result as string;
-                resolve(base64data.split(',')[1]); // Remove data:application/pdf;base64,
-            };
-            reader.readAsDataURL(pdfBlob);
-        });
-    }
 
     const templateParams = {
         to_email: settings.notificationEmail,
@@ -79,25 +75,23 @@ export const sendNotificationEmail = async (
         total_ttc: formatCurrency(quote.totalTtc),
         summary_html: summaryHtml,
         content: `Nouveau devis de ${selection.contact.name} pour le ${new Date(selection.event.date).toLocaleDateString('fr-FR')}`,
-        // Handle attachment for EmailJS REST API
-        // Note: EmailJS REST API expects attachments as an array of objects
-        // or a base64 string depending on the configuration. 
-        // We'll use the variable name 'my_attachment' in the template
-        content_base64: pdfBase64 
+        download_url: downloadUrl
     };
 
     try {
+        const payload: any = {
+            service_id: 'service_54e2uef',
+            template_id: settings.emailJsTemplateId,
+            user_id: settings.emailJsPublicKey,
+            template_params: templateParams
+        };
+
         const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                service_id: 'service_54e2uef',
-                template_id: settings.emailJsTemplateId,
-                user_id: settings.emailJsPublicKey,
-                template_params: templateParams
-            })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
@@ -105,7 +99,7 @@ export const sendNotificationEmail = async (
             throw new Error(`EmailJS Error: ${response.status} - ${errorText}`);
         }
 
-        console.log('[Notification] Email sent successfully');
+        console.log('[Notification] Email sent successfully with download link');
     } catch (error) {
         console.error('[Notification] Failed to send email:', error);
     }

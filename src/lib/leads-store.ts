@@ -240,7 +240,18 @@ export const LeadStore = {
         }
     },
 
+    async getLead(id: string): Promise<QuoteLead | null> {
+        try {
+            const leadDoc = await databases.getDocument(databaseId, leadsCollectionId, id);
+            return mapLead(leadDoc);
+        } catch (e) {
+            console.error('[LeadStore] Error fetching lead', e);
+            return null;
+        }
+    },
+
     async deleteLead(id: string): Promise<void> {
+
         try {
             await databases.deleteDocument(databaseId, leadsCollectionId, id);
         } catch (e) {

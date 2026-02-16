@@ -33,23 +33,15 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
                     // 2. Fetch Settings
                     const settings = await SettingsStore.getSettings();
                     
-                    // 3. Generate PDF for attachment
-                    let pdfBlob: Blob | undefined;
-                    try {
-                        pdfBlob = await pdf(<PdfDocument selection={selection} quote={quote} />).toBlob();
-                    } catch (e) {
-                        console.error('Failed to generate PDF for notification', e);
-                    }
-
-                    // 4. Send Email Notification
-                    await sendNotificationEmail(selection, settings, pdfBlob);
+                    // 3. Send Email Notification
+                    await sendNotificationEmail(selection, newLead.id, settings);
                 }
                 
                 hasSaved.current = true;
             }
         };
         saveAndNotify();
-    }, [selection, quote]);
+    }, [selection]);
 
 
     const handleDownload = async () => {
