@@ -74,5 +74,6 @@
     - Exposer `address`, `vatNumber`, et `internalRef` dans le `LeadEditor.tsx`.
     - Synchronisation des notifications avec les clés EmailJS via `SettingsStore`.
     - Amélioration de la traçabilité des logs dans `StepSummary.tsx`.
+    - **Fix:** Correction de l'erreur TS dans `StepSummary.tsx` (remplacement de `$id` par `id`).
 - **Status:** Completed.
 
