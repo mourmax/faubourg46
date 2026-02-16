@@ -56,11 +56,11 @@ export function AdminDashboard() {
             whatsappNumber: settings?.whatsappNumber || '33600000000',
             notificationEmail: settings?.notificationEmail || 'matis@example.com',
             emailJsPublicKey: settings?.emailJsPublicKey || '',
-            emailJsTemplateId: settings?.emailJsTemplateId || ''
+            emailJsTemplateId: settings?.emailJsTemplateId || '',
+            emailJsServiceId: settings?.emailJsServiceId || 'service_54e2uef'
         };
 
         setSettings(updatedSettings);
-        SettingsStore.updateSettings({ whatsappEnabled: newStatus });
     };
 
 
@@ -275,9 +275,18 @@ export function AdminDashboard() {
                                         />
                                     </div>
 
-                                    <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="grid md:grid-cols-3 gap-6">
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-2">Public Key (User ID)</label>
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-2">Service ID</label>
+                                            <input
+                                                className="w-full h-14 bg-white border border-neutral-200 rounded-2xl px-6 text-dark-900 font-black focus:border-gold-500 focus:ring-4 focus:ring-gold-500/5 outline-none transition-all placeholder:text-neutral-300 text-xs"
+                                                value={settings?.emailJsServiceId || ''}
+                                                onChange={(e) => handleUpdateSettings({ emailJsServiceId: e.target.value })}
+                                                placeholder="service_..."
+                                            />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-2">Public Key</label>
                                             <input
                                                 className="w-full h-14 bg-white border border-neutral-200 rounded-2xl px-6 text-dark-900 font-black focus:border-gold-500 focus:ring-4 focus:ring-gold-500/5 outline-none transition-all placeholder:text-neutral-300 text-xs"
                                                 value={settings?.emailJsPublicKey || ''}

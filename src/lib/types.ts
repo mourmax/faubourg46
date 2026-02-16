@@ -132,5 +132,6 @@ export interface AppSettings {
     notificationEmail: string;
     emailJsPublicKey: string;
     emailJsTemplateId: string;
+    emailJsServiceId: string;
 }
 

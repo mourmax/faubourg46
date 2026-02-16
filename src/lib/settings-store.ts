@@ -9,7 +9,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     whatsappNumber: '33650154641',
     notificationEmail: 'matis@example.com',
     emailJsPublicKey: '',
-    emailJsTemplateId: ''
+    emailJsTemplateId: '',
+    emailJsServiceId: 'service_54e2uef'
 };
 
 export const SettingsStore = {
@@ -21,7 +22,8 @@ export const SettingsStore = {
                 whatsappNumber: doc.whatsappNumber,
                 notificationEmail: doc.notificationEmail || DEFAULT_SETTINGS.notificationEmail,
                 emailJsPublicKey: doc.emailJsPublicKey || DEFAULT_SETTINGS.emailJsPublicKey,
-                emailJsTemplateId: doc.emailJsTemplateId || DEFAULT_SETTINGS.emailJsTemplateId
+                emailJsTemplateId: doc.emailJsTemplateId || DEFAULT_SETTINGS.emailJsTemplateId,
+                emailJsServiceId: doc.emailJsServiceId || DEFAULT_SETTINGS.emailJsServiceId
             };
         } catch (e: any) {
 

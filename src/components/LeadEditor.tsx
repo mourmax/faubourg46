@@ -1,30 +1,36 @@
 import { useState, useMemo } from 'react';
 import { Card, Button, Input } from './ui/components';
 import { Alert } from './ui/Alert';
+import type { QuoteLead, FormulaDefinition, QuoteItem, LeadStatus, InvoiceData } from '../lib/types';
 import { LeadStore } from '../lib/leads-store';
-import type { QuoteLead, LeadStatus, InvoiceData, FormulaDefinition, QuoteItem } from '../lib/types';
-import { formatCurrency } from '../lib/utils';
+import { SettingsStore } from '../lib/settings-store';
+import { sendNotificationEmail } from '../lib/notifications';
 import { calculateQuoteTotal } from '../lib/quote-engine';
-import {
+import { formatCurrency } from '../lib/utils';
+import { pdf } from '@react-pdf/renderer';
+import { PdfDocument } from './PdfDocument';
+import { InvoicePdfDocument } from './InvoicePdfDocument';
+import { 
+    Calendar, 
+    Utensils, 
+    Tag, 
+    Clock, 
+    Download, 
+    FileText,
     ArrowLeft,
-    User,
-    Calendar,
-    Utensils,
-    MessageSquare,
-    Clock,
-    Send,
-    Download,
-    Tag,
+    Wine,
     Percent,
     Coins,
     Plus,
     Minus,
-    Wine,
-    FileText
+    Loader2,
+    MessageSquare,
+    Send,
+    User
 } from 'lucide-react';
-import { pdf } from '@react-pdf/renderer';
-import { PdfDocument } from './PdfDocument';
-import { InvoicePdfDocument } from './InvoicePdfDocument';
+
+
+
 import { InvoiceEditor } from './InvoiceEditor';
 import { CHAMPAGNES, EXTRAS, FORMULAS as INITIAL_FORMULAS } from '../lib/data';
 import { getFormulaAvailability } from '../lib/quote-engine';
@@ -353,6 +359,7 @@ export function LeadEditor({
     const [draft, setDraft] = useState<QuoteLead>(initialLead);
     const [newComment, setNewComment] = useState('');
     const [showInvoiceEditor, setShowInvoiceEditor] = useState(false);
+    const [isSendingNotification, setIsSendingNotification] = useState(false);
     const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string; duration?: number } | null>(null);
     const quote = calculateQuoteTotal(draft.selection);
 
@@ -551,6 +558,28 @@ export function LeadEditor({
         } catch (error) {
             console.error(error);
             setAlertState({ type: 'error', title: 'Erreur de sauvegarde', message: 'Impossible d\'enregistrer la facture.' });
+        }
+    };
+
+    const handleResendNotification = async () => {
+        setIsSendingNotification(true);
+        try {
+            const settings = await SettingsStore.getSettings();
+            await sendNotificationEmail(draft.selection, draft.id, settings);
+            setAlertState({
+                type: 'success',
+                title: 'Notification envoyée',
+                message: 'L\'email de notification a été renvoyé avec succès.'
+            });
+        } catch (error) {
+            console.error(error);
+            setAlertState({
+                type: 'error',
+                title: 'Échec de l\'envoi',
+                message: 'Une erreur est survenue lors de l\'envoi de la notification.'
+            });
+        } finally {
+            setIsSendingNotification(false);
         }
     };
 
@@ -1003,46 +1032,36 @@ export function LeadEditor({
                                     <div className="text-base font-black tracking-widest text-white">{formatCurrency(quote.deposit)}</div>
                                 </div>
                             </div>
-                            <Button
-                                onClick={handleDownloadQuote}
-                                className="w-full bg-black text-white hover:bg-neutral-900 h-14 font-black gap-3 mt-4 border-none shadow-2xl"
-                            >
-                                <Download className="w-5 h-5" />
-                                GÉNÉRER LE PDF
-                            </Button>
 
-                            {!draft.invoice ? (
-                                <Button
-                                    onClick={() => setShowInvoiceEditor(true)}
-                                    className="w-full gold-gradient text-white hover:opacity-90 h-14 font-black gap-3 mt-3 border-none shadow-2xl"
+                            <Button 
+                                onClick={handleDownloadQuote}
+                                className="w-full h-16 text-sm font-black uppercase tracking-widest bg-white text-dark-900 gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-2xl border-none mt-4"
+                            >
+                                <FileText className="w-5 h-5 text-gold-600" />
+                                Générer le Devis PDF
+                            </Button>
+                            
+                            {draft.invoice && (
+                                <Button 
+                                    onClick={handleDownloadInvoice}
+                                    className="w-full h-14 text-xs font-black uppercase tracking-widest bg-dark-900 text-white gap-3 shadow-xl hover:bg-neutral-800 transition-all rounded-2xl border-none mt-2"
                                 >
-                                    <FileText className="w-5 h-5" />
-                                    CRÉER UNE FACTURE
+                                    <Download className="w-5 h-5" />
+                                    Générer la Facture PDF
                                 </Button>
-                            ) : (
-                                <div className="mt-4 space-y-3">
-                                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">Facture</div>
-                                        <div className="text-lg font-black text-white">{draft.invoice.invoiceNumber}</div>
-                                        <div className="text-[9px] text-white/70 mt-1">{draft.invoice.invoiceDate.toLocaleDateString('fr-FR')}</div>
-                                    </div>
-                                    <Button
-                                        onClick={handleDownloadInvoice}
-                                        className="w-full bg-white text-dark-900 hover:bg-neutral-100 h-12 font-black gap-3 border-none shadow-xl text-xs"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        PDF FACTURE
-                                    </Button>
-                                    <Button
-                                        onClick={() => setShowInvoiceEditor(true)}
-                                        className="w-full bg-white/10 text-white hover:bg-white/20 h-10 font-black gap-2 border border-white/30 text-[10px]"
-                                    >
-                                        Modifier
-                                    </Button>
-                                </div>
                             )}
                         </div>
                     </Card>
+
+                    <Button 
+                        onClick={handleResendNotification}
+                        disabled={isSendingNotification}
+                        className="w-full h-14 text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 gap-3 border-blue-100 hover:bg-blue-100 transition-all rounded-2xl"
+                        variant="outline"
+                    >
+                        {isSendingNotification ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        Renvoyer notification email
+                    </Button>
 
                     {/* Tracking Comments */}
                     <Card className="bg-white p-8 border-none flex flex-col h-[600px] shadow-2xl">
@@ -1115,3 +1134,4 @@ export function LeadEditor({
         </div>
     );
 }
+

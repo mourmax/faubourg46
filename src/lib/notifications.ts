@@ -9,10 +9,13 @@ export const sendNotificationEmail = async (
         notificationEmail: string;
         emailJsPublicKey: string;
         emailJsTemplateId: string;
+        emailJsServiceId: string;
     }
 ) => {
-    if (!settings.emailJsPublicKey || !settings.emailJsTemplateId) {
-        console.warn('[Notification] EmailJS credentials missing, skipping email.');
+    console.log('[Notification] Preparing to send email...', { leadId, email: settings.notificationEmail });
+    
+    if (!settings.emailJsPublicKey || !settings.emailJsTemplateId || !settings.emailJsServiceId) {
+        console.warn('[Notification] EmailJS credentials missing, skipping email.', settings);
         return;
     }
 
@@ -80,7 +83,7 @@ export const sendNotificationEmail = async (
 
     try {
         const payload: any = {
-            service_id: 'service_54e2uef',
+            service_id: settings.emailJsServiceId,
             template_id: settings.emailJsTemplateId,
             user_id: settings.emailJsPublicKey,
             template_params: templateParams
