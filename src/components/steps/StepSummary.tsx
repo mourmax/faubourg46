@@ -28,13 +28,13 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
             if (!hasSaved.current) {
                 try {
                     console.log('[StepSummary] Saving lead...');
-                    
-                    // 1. Save Lead - retourne un objet QuoteLead avec $id (convention Appwrite)
+
+                    // 1. Save Lead - retourne un objet QuoteLead
                     const newLead = await LeadStore.saveLead(selection);
-                    
-                    if (newLead && newLead.$id) {
-                        console.log('[StepSummary] Lead saved with ID:', newLead.$id);
-                        
+
+                    if (newLead && newLead.id) {
+                        console.log('[StepSummary] Lead saved with ID:', newLead.id);
+
                         // 2. Fetch Settings
                         const settings = await SettingsStore.getSettings();
                         console.log('[StepSummary] Settings retrieved:', {
@@ -44,14 +44,14 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
                             hasTemplateId: !!settings.emailJsTemplateId,
                             hasPrivateKey: !!settings.emailJsPrivateKey
                         });
-                        
-                        // 3. Send Email Notification avec l'ID du lead (Appwrite utilise $id)
-                        await sendNotificationEmail(selection, newLead.$id, settings);
+
+                        // 3. Send Email Notification
+                        await sendNotificationEmail(selection, newLead.id, settings);
                         console.log('[StepSummary] Notification process completed');
                     } else {
                         console.error('[StepSummary] Failed to save lead - no ID returned');
                     }
-                    
+
                     hasSaved.current = true;
                 } catch (error) {
                     console.error('[StepSummary] Error in saveAndNotify:', error);
