@@ -282,7 +282,7 @@ export const PdfDocument = ({ selection, quote, reference }: PdfDocumentProps) =
 
 
             {/* Footer */}
-            <Text style={styles.footer}>FAUBOURG 46 - 46 Boulevard Gambetta, 30000 Nîmes - Tél: 04 66 21 02 49 - Email: contact@faubourg46.fr</Text>
+            <Text style={styles.footer}>FAUBOURG 46 - 46 Boulevard Gambetta, 30000 Nîmes - SIRET: 84752154900026 - TVA: FR77847521549 - Tél: 04 66 21 02 49</Text>
         </Page>
     </Document>
 );
