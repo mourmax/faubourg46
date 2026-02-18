@@ -18,7 +18,10 @@
 - **Capacité Brasserie:** Les formules Brasserie classiques sont limitées à **30 personnes maximum**. Au-delà, passer sur du Festif ou Tapas (ou validation manuelle).
 - **Validation Convives:** Le nombre total de formules sélectionnées doit être **égal** au nombre de convives déclaré dans l'étape 1.
 
-### 3. Centralisation de la Logique
+### 3. Automatisation Admin
+- **Statut du Devis :** Toute modification du statut dans l'éditeur doit être persistée immédiatement en base de données.
+- **Workflow Facturation :** Un devis peut être transformé en facture à tout moment. La facture hérite des items du devis mais permet des modifications ad-hoc sans affecter le devis original.
+
 - **Fichier de référence :** [quote-engine.ts](file:///c:/Users/matis/Desktop/FAUBOURG%20-%20DEVIS%20GROUPE/src/lib/quote-engine.ts)
 - **Fonction :** `getFormulaAvailability`
 - **Utilisation :** Cette fonction est utilisée à la fois par le parcours utilisateur (`StepMenu.tsx`) et par l'éditeur admin (`LeadEditor.tsx`) pour garantir une application uniforme des règles de restriction.
@@ -68,8 +71,16 @@
 
 ## Maintenance Log
 
-### 2026-02-16
+### 2026-02-18
+- **Task:** Auto-save statut & Bouton Facture.
+- **Changes:**
+    - Sauvegarde immédiate du statut dans `LeadEditor.tsx`.
+    - Restauration du bouton "Transformer en Facture" dans le panneau financier.
+- **Status:** In Progress.
+
+## 2026-02-16
 - **Task:** Ajout des champs Société dans l'Admin.
+
 - **Changes:**
     - Exposer `address`, `vatNumber`, et `internalRef` dans le `LeadEditor.tsx`.
     - Synchronisation des notifications avec les clés EmailJS via `SettingsStore`.

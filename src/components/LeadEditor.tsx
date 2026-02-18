@@ -10,12 +10,12 @@ import { formatCurrency } from '../lib/utils';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './PdfDocument';
 import { InvoicePdfDocument } from './InvoicePdfDocument';
-import { 
-    Calendar, 
-    Utensils, 
-    Tag, 
-    Clock, 
-    Download, 
+import {
+    Calendar,
+    Utensils,
+    Tag,
+    Clock,
+    Download,
     FileText,
     ArrowLeft,
     Wine,
@@ -26,7 +26,9 @@ import {
     Loader2,
     MessageSquare,
     Send,
-    User
+    User,
+    FilePlus,
+    FileEdit
 } from 'lucide-react';
 
 
@@ -403,12 +405,12 @@ export function LeadEditor({
             if (o.quantity > 0 || o.name === 'Gâteau d’anniversaire') {
                 let qty = o.quantity;
                 let pu = o.unitPriceTtc;
-                
+
                 if (o.name === 'DJ') {
                     const day = draft.selection.event.date.getDay();
                     if (day === 4 || day === 5 || day === 6) pu = 0;
                 }
-                
+
                 if (o.name === 'Gâteau d’anniversaire') {
                     qty = event.guests;
                     pu = 4.5;
@@ -447,8 +449,32 @@ export function LeadEditor({
         { id: 'NOTES', label: 'Remise & Notes', icon: Tag },
     ] as const;
 
-    const handleStatusChange = (newStatus: LeadStatus) => {
+    const handleStatusChange = async (newStatus: LeadStatus) => {
         setDraft(prev => ({ ...prev, status: newStatus }));
+        try {
+            const updatedLead = await LeadStore.updateLead(draft.id, {
+                status: newStatus,
+                selection: draft.selection
+            });
+
+            if (updatedLead) {
+                setLead(updatedLead);
+                setDraft(updatedLead);
+                onUpdate();
+                setAlertState({
+                    type: 'success',
+                    title: 'Statut mis à jour',
+                    duration: 1500
+                });
+            }
+        } catch (error: any) {
+            console.error('[LeadEditor] Status update failed:', error);
+            setAlertState({
+                type: 'error',
+                title: 'Erreur',
+                message: 'Échec de mise à jour du statut.'
+            });
+        }
     };
 
     const handleContactChange = (field: string, value: string | boolean | undefined) => {
@@ -969,17 +995,16 @@ export function LeadEditor({
                                 <Utensils className="w-5 h-5 text-gold-500" />
                                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em]">Détail du panier</h3>
                             </div>
-                            
+
                             <div className="space-y-5 max-h-[450px] overflow-y-auto pr-3 custom-scrollbar">
                                 {cartSummary.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-start gap-4 group pb-4 border-b border-white/5 last:border-0 last:pb-0">
                                         <div className="flex flex-col min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-sm tracking-widest ${
-                                                    item.type === 'FORMULE' ? 'bg-gold-600 text-white' : 
-                                                    item.type === 'BOISSON' ? 'bg-blue-600 text-white' : 
-                                                    'bg-neutral-600 text-white'
-                                                }`}>
+                                                <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-sm tracking-widest ${item.type === 'FORMULE' ? 'bg-gold-600 text-white' :
+                                                    item.type === 'BOISSON' ? 'bg-blue-600 text-white' :
+                                                        'bg-neutral-600 text-white'
+                                                    }`}>
                                                     {item.type}
                                                 </span>
                                             </div>
@@ -1033,27 +1058,44 @@ export function LeadEditor({
                                 </div>
                             </div>
 
-                            <Button 
+                            <Button
                                 onClick={handleDownloadQuote}
                                 className="w-full h-16 text-sm font-black uppercase tracking-widest bg-white text-dark-900 gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-2xl border-none mt-4"
                             >
                                 <FileText className="w-5 h-5 text-gold-600" />
                                 Générer le Devis PDF
                             </Button>
-                            
-                            {draft.invoice && (
-                                <Button 
-                                    onClick={handleDownloadInvoice}
+
+                            {draft.invoice ? (
+                                <div className="space-y-2 mt-2">
+                                    <Button
+                                        onClick={handleDownloadInvoice}
+                                        className="w-full h-14 text-xs font-black uppercase tracking-widest bg-dark-900 text-white gap-3 shadow-xl hover:bg-neutral-800 transition-all rounded-2xl border-none"
+                                    >
+                                        <Download className="w-5 h-5" />
+                                        Générer la Facture PDF
+                                    </Button>
+                                    <Button
+                                        onClick={() => setShowInvoiceEditor(true)}
+                                        className="w-full h-12 text-[10px] font-black uppercase tracking-widest bg-white/10 text-white gap-3 hover:bg-white/20 transition-all rounded-2xl border border-white/20"
+                                    >
+                                        <FileEdit className="w-4 h-4" />
+                                        Modifier la Facture
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button
+                                    onClick={() => setShowInvoiceEditor(true)}
                                     className="w-full h-14 text-xs font-black uppercase tracking-widest bg-dark-900 text-white gap-3 shadow-xl hover:bg-neutral-800 transition-all rounded-2xl border-none mt-2"
                                 >
-                                    <Download className="w-5 h-5" />
-                                    Générer la Facture PDF
+                                    <FilePlus className="w-5 h-5" />
+                                    Transformer en Facture
                                 </Button>
                             )}
                         </div>
                     </Card>
 
-                    <Button 
+                    <Button
                         onClick={handleResendNotification}
                         disabled={isSendingNotification}
                         className="w-full h-14 text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 gap-3 border-blue-100 hover:bg-blue-100 transition-all rounded-2xl"
