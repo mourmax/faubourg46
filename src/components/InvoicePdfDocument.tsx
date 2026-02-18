@@ -171,7 +171,7 @@ export function InvoicePdfDocument({ selection, invoice }: Omit<InvoicePdfProps,
 
                 {/* Footer */}
                 <Text style={styles.footer}>
-                    Faubourg 46 - 46 Boulevard Gambetta, 30000 Nîmes - SIRET: 84752154900026 - TVA: FR77847521549
+                    Faubourg 46 - 46 cours sextius 13100 aix en Provence - SIRET: 84752154900026 - TVA: FR77847521549
                 </Text>
             </Page>
         </Document>
