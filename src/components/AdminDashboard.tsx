@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/components';
 import { LogOut, LayoutDashboard, Database, Briefcase, Plus, Settings, MessageCircle, Save, Loader2 } from 'lucide-react';
 import { FORMULAS as INITIAL_FORMULAS, CHAMPAGNES as INITIAL_CHAMPAGNES, EXTRAS as INITIAL_EXTRAS, INITIAL_SELECTION } from '../lib/data';
-import type { FormulaDefinition, QuoteItem, QuoteLead, AppSettings, VatRate } from '../lib/types';
+import type { FormulaDefinition, QuoteItem, QuoteLead, AppSettings } from '../lib/types';
 import { AdminCatalogue } from './AdminCatalogue';
 import { AdminLeads } from './AdminLeads';
 import { LeadEditor } from './LeadEditor';
