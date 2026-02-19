@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import type { QuoteSelection } from '../lib/types';
+import type { QuoteSelection, FormulaDefinition, QuoteItem } from '../lib/types';
 import { calculateQuoteTotal } from '../lib/quote-engine';
 import { formatCurrency } from '../lib/utils';
 
@@ -42,9 +42,11 @@ interface PdfDocumentProps {
     selection: QuoteSelection;
     quote: ReturnType<typeof calculateQuoteTotal>;
     reference?: string;
+    catalogueFormulas?: FormulaDefinition[];
+    catalogueOptions?: QuoteItem[];
 }
 
-export const PdfDocument = ({ selection, quote, reference }: PdfDocumentProps) => (
+export const PdfDocument = ({ selection, quote, reference, catalogueFormulas, catalogueOptions }: PdfDocumentProps) => (
     <Document>
         <Page size="A4" style={styles.page}>
 

@@ -23,3 +23,9 @@
 - [x] Tester la transformation d'un devis en facture et la génération du PDF.
 - [x] Finaliser le `progress.md`.
 
+## Phase Bonus : Mise à jour TVA & Catalogue (Fev 2026)
+- [x] Modifier `AdminCatalogue.tsx` pour afficher le détail HT/TVA en temps réel.
+- [x] Refactoriser `quote-engine.ts` pour synchroniser les calculs avec les dernières données du catalogue.
+- [x] Mettre à jour `InvoiceEditor.tsx` pour ventiler automatiquement les formules sur 2 lignes de TVA (10% et 20%).
+- [x] Injecter le catalogue dans `Wizard.tsx` et `AdminLeads.tsx` pour des calculs uniformes.
+- [x] Vérifier la génération des PDF devis/facture avec les nouveaux calculs.

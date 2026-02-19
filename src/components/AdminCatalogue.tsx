@@ -35,32 +35,58 @@ export function AdminCatalogue({
                                             {f.type === 'TAPAS' ? '🌙 Menu Tapas' : '☀️ Menu Brasserie'}
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-[10px] font-black text-gold-600 uppercase tracking-widest">Total TTC</div>
-                                        <div className="text-xl font-black text-dark-900">{(f.part10Ht * 1.1 + f.part20Ht * 1.2).toFixed(2)}€</div>
+                                    <div className="text-right space-y-1">
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] leading-none">Total HT</span>
+                                            <span className="text-[11px] font-black text-neutral-600 tracking-tight">{(f.part10Ht + f.part20Ht).toFixed(2)}€</span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] leading-none">TVA Totale</span>
+                                            <span className="text-[11px] font-black text-neutral-600 tracking-tight">{(f.part10Ht * 0.1 + f.part20Ht * 0.2).toFixed(2)}€</span>
+                                        </div>
+                                        <div className="flex flex-col items-end pt-1 border-t border-neutral-100">
+                                            <span className="text-[9px] font-black text-gold-600 uppercase tracking-widest leading-none">Total TTC</span>
+                                            <span className="text-xl font-black text-dark-900 leading-none mt-1 tracking-tighter">{(f.part10Ht * 1.1 + f.part20Ht * 1.2).toFixed(2)}€</span>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-100">
                                     <div className="space-y-2">
                                         <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500 text-blue-600">Part HT (TVA 10%)</label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            className="bg-blue-50/50 border-blue-100 text-neutral-900 h-12 text-lg font-black"
-                                            value={f.part10Ht}
-                                            onChange={e => onFormulaChange(f.id, 'part10Ht', parseFloat(e.target.value) || 0)}
-                                        />
+                                        <div className="flex gap-2">
+                                            <div className="relative flex-1">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    className="bg-blue-50/50 border-blue-100 text-neutral-900 h-12 text-lg font-black"
+                                                    value={f.part10Ht}
+                                                    onChange={e => onFormulaChange(f.id, 'part10Ht', parseFloat(e.target.value) || 0)}
+                                                />
+                                            </div>
+                                            <div className="w-16 h-12 bg-blue-100/30 border border-blue-100 rounded-xl flex flex-col items-center justify-center">
+                                                <span className="text-[7px] font-black text-blue-600 uppercase">TVA</span>
+                                                <span className="text-xs font-black text-blue-900">{(f.part10Ht * 0.1).toFixed(2)}€</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500 text-purple-600">Part HT (TVA 20%)</label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            className="bg-purple-50/50 border-purple-100 text-neutral-900 h-12 text-lg font-black"
-                                            value={f.part20Ht}
-                                            onChange={e => onFormulaChange(f.id, 'part20Ht', parseFloat(e.target.value) || 0)}
-                                        />
+                                        <div className="flex gap-2">
+                                            <div className="relative flex-1">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    className="bg-purple-50/50 border-purple-100 text-neutral-900 h-12 text-lg font-black"
+                                                    value={f.part20Ht}
+                                                    onChange={e => onFormulaChange(f.id, 'part20Ht', parseFloat(e.target.value) || 0)}
+                                                />
+                                            </div>
+                                            <div className="w-16 h-12 bg-purple-100/30 border border-purple-100 rounded-xl flex flex-col items-center justify-center">
+                                                <span className="text-[7px] font-black text-purple-600 uppercase">TVA</span>
+                                                <span className="text-xs font-black text-purple-900">{(f.part20Ht * 0.2).toFixed(2)}€</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -22,48 +22,82 @@ export function InvoiceEditor({ existingInvoice, quoteSelection, onSave, onCance
         // Add formulas
         (quoteSelection.formulas || []).forEach(sf => {
             if (sf.quantity <= 0) return;
-            const priceTtc = sf.customPrice !== undefined ? sf.customPrice : sf.formula.priceTtc;
-            const priceHt = priceTtc / 1.1; // Standard 10% VAT assumption for formulas in invoice
-            quoteItems.push({
-                id: `formula-${sf.formula.id}`,
-                description: `${sf.formula.name} (${sf.quantity} pers.)`,
-                quantity: sf.quantity,
-                unitPriceHt: priceHt,
-                vatRate: 10,
-                totalHt: priceHt * sf.quantity,
-                totalTva: (priceHt * sf.quantity) * 0.1,
-                totalTtc: priceTtc * sf.quantity
-            });
+
+            const formula = sf.formula;
+            const originalTtc = formula.priceTtc || (formula.part10Ht * 1.1 + formula.part20Ht * 1.2);
+            const priceTtc = sf.customPrice !== undefined ? sf.customPrice : originalTtc;
+            const scaleFactor = originalTtc > 0 ? priceTtc / originalTtc : 1;
+
+            if (formula.part10Ht > 0) {
+                const partHt = formula.part10Ht * scaleFactor;
+                quoteItems.push({
+                    id: `formula-${formula.id}-10`,
+                    description: `${formula.name} (Part 10% TVA) - ${sf.quantity} pers.`,
+                    quantity: sf.quantity,
+                    unitPriceHt: partHt,
+                    vatRate: 10,
+                    totalHt: partHt * sf.quantity,
+                    totalTva: (partHt * sf.quantity) * 0.1,
+                    totalTtc: (partHt * sf.quantity) * 1.1
+                });
+            }
+            if (formula.part20Ht > 0) {
+                const partHt = formula.part20Ht * scaleFactor;
+                quoteItems.push({
+                    id: `formula-${formula.id}-20`,
+                    description: `${formula.name} (Part 20% TVA) - ${sf.quantity} pers.`,
+                    quantity: sf.quantity,
+                    unitPriceHt: partHt,
+                    vatRate: 20,
+                    totalHt: partHt * sf.quantity,
+                    totalTva: (partHt * sf.quantity) * 0.2,
+                    totalTtc: (partHt * sf.quantity) * 1.2
+                });
+            }
         });
 
         // Backward compatibility if formulas is empty but single formula exists
         if (quoteSelection.formulas.length === 0 && quoteSelection.formula) {
-            const formulaPriceHt = quoteSelection.formula.priceTtc / 1.1;
-            quoteItems.push({
-                id: 'formula',
-                description: `${quoteSelection.formula.name} (${quoteSelection.event.guests} pers.)`,
-                quantity: quoteSelection.event.guests,
-                unitPriceHt: formulaPriceHt,
-                vatRate: 10,
-                totalHt: formulaPriceHt * quoteSelection.event.guests,
-                totalTva: (formulaPriceHt * quoteSelection.event.guests) * 0.1,
-                totalTtc: quoteSelection.formula.priceTtc * quoteSelection.event.guests
-            });
+            const formula = quoteSelection.formula;
+            if (formula.part10Ht > 0) {
+                quoteItems.push({
+                    id: 'formula-legacy-10',
+                    description: `${formula.name} (Part 10% TVA) - ${quoteSelection.event.guests} pers.`,
+                    quantity: quoteSelection.event.guests,
+                    unitPriceHt: formula.part10Ht,
+                    vatRate: 10,
+                    totalHt: formula.part10Ht * quoteSelection.event.guests,
+                    totalTva: (formula.part10Ht * quoteSelection.event.guests) * 0.1,
+                    totalTtc: (formula.part10Ht * quoteSelection.event.guests) * 1.1
+                });
+            }
+            if (formula.part20Ht > 0) {
+                quoteItems.push({
+                    id: 'formula-legacy-20',
+                    description: `${formula.name} (Part 20% TVA) - ${quoteSelection.event.guests} pers.`,
+                    quantity: quoteSelection.event.guests,
+                    unitPriceHt: formula.part20Ht,
+                    vatRate: 20,
+                    totalHt: formula.part20Ht * quoteSelection.event.guests,
+                    totalTva: (formula.part20Ht * quoteSelection.event.guests) * 0.2,
+                    totalTtc: (formula.part20Ht * quoteSelection.event.guests) * 1.2
+                });
+            }
         }
 
         // Add options
         quoteSelection.options.forEach(opt => {
             if (opt.quantity > 0) {
-                const optionPriceHt = opt.unitPriceTtc / 1.2; // Assuming 20% VAT for options
+                const multiplier = opt.name === 'Gâteau d’anniversaire' ? quoteSelection.event.guests : opt.quantity;
                 quoteItems.push({
                     id: `option-${opt.name}`,
                     description: opt.name,
-                    quantity: opt.quantity,
-                    unitPriceHt: optionPriceHt,
-                    vatRate: 20,
-                    totalHt: optionPriceHt * opt.quantity,
-                    totalTva: (optionPriceHt * opt.quantity) * 0.2,
-                    totalTtc: opt.unitPriceTtc * opt.quantity
+                    quantity: multiplier,
+                    unitPriceHt: opt.unitPriceHt,
+                    vatRate: opt.vatRate as VatRate,
+                    totalHt: opt.unitPriceHt * multiplier,
+                    totalTva: (opt.unitPriceHt * multiplier) * (opt.vatRate / 100),
+                    totalTtc: (opt.unitPriceHt * multiplier) * (1 + opt.vatRate / 100)
                 });
             }
         });
@@ -91,7 +125,6 @@ export function InvoiceEditor({ existingInvoice, quoteSelection, onSave, onCance
         }
 
         return {
-
             invoiceNumber: '',
             invoiceDate: new Date(),
             customItems: quoteItems,
@@ -171,7 +204,7 @@ export function InvoiceEditor({ existingInvoice, quoteSelection, onSave, onCance
     const balanceDue = totals.totalTtc - (invoice.depositReceived ? (invoice.depositAmount || 0) : 0);
 
     // Check if item is from quote (not custom)
-    const isQuoteItem = (id: string) => id === 'formula' || id.startsWith('option-');
+    const isQuoteItem = (id: string) => id.startsWith('formula-') || id.startsWith('option-') || id === 'discount';
 
     return (
         <div className="space-y-6 p-8">

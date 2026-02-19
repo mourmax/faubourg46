@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, Input } from './ui/components';
 import { LeadStore } from '../lib/leads-store';
-import type { QuoteLead, LeadStatus } from '../lib/types';
+import type { QuoteLead, LeadStatus, FormulaDefinition, QuoteItem } from '../lib/types';
 import { formatCurrency } from '../lib/utils';
 import { calculateQuoteTotal } from '../lib/quote-engine';
 import {
@@ -21,9 +21,13 @@ import { PdfDocument } from './PdfDocument';
 
 interface AdminLeadsProps {
     onEdit: (lead: QuoteLead) => void;
+    formulas: FormulaDefinition[];
+    champagnes: QuoteItem[];
+    extras: QuoteItem[];
 }
 
-export function AdminLeads({ onEdit }: AdminLeadsProps) {
+export function AdminLeads({ onEdit, formulas, champagnes, extras }: AdminLeadsProps) {
+    const catalogueOptions = [...champagnes, ...extras];
     const [leads, setLeads] = useState<QuoteLead[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -47,7 +51,7 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
     const handleDownloadPdf = async (e: React.MouseEvent, selection: any, id: string, isHistory = false, reference?: string) => {
         e.stopPropagation();
         try {
-            const quote = calculateQuoteTotal(selection);
+            const quote = calculateQuoteTotal(selection, formulas, catalogueOptions);
             const finalRef = reference || selection.lastReference;
             const blob = await pdf(<PdfDocument selection={selection} quote={quote} reference={finalRef} />).toBlob();
             const url = URL.createObjectURL(blob);
@@ -143,7 +147,7 @@ export function AdminLeads({ onEdit }: AdminLeadsProps) {
 
             <div className="grid grid-cols-1 gap-4">
                 {filteredLeads.map(lead => {
-                    const quote = calculateQuoteTotal(lead.selection);
+                    const quote = calculateQuoteTotal(lead.selection, formulas, catalogueOptions);
 
                     return (
                         <Card

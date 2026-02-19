@@ -363,7 +363,9 @@ export function LeadEditor({
     const [showInvoiceEditor, setShowInvoiceEditor] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
     const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string; duration?: number } | null>(null);
-    const quote = calculateQuoteTotal(draft.selection);
+    const catalogueOptions = useMemo(() => [...(catalogueChampagnes || []), ...(catalogueExtras || [])], [catalogueChampagnes, catalogueExtras]);
+    const quote = calculateQuoteTotal(draft.selection, catalogueFormulas, catalogueOptions);
+
 
     const cartSummary = useMemo(() => {
         const { formulas = [], options = [], customItem, event } = draft.selection;

@@ -347,7 +347,13 @@ export function AdminDashboard() {
                             </div>
                         </div>
                     ) : (
-                        <AdminLeads key={refreshTrigger} onEdit={setEditingLead} />
+                        <AdminLeads
+                            key={refreshTrigger}
+                            onEdit={setEditingLead}
+                            formulas={formulas}
+                            champagnes={champagnes}
+                            extras={extras}
+                        />
                     )}
                 </div>
 

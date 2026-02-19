@@ -1,4 +1,4 @@
-import type { QuoteSelection } from './types';
+import type { QuoteSelection, FormulaDefinition, QuoteItem } from './types';
 import { FORMULAS } from './data';
 
 export const isFestiveRequired = (date: Date, service: string): boolean => {
@@ -69,7 +69,11 @@ export const getFormulaAvailability = (
     return { available: true };
 };
 
-export const calculateQuoteTotal = (selection: QuoteSelection) => {
+export const calculateQuoteTotal = (
+    selection: QuoteSelection,
+    catalogueFormulas?: FormulaDefinition[],
+    catalogueOptions?: QuoteItem[]
+) => {
     const { formulas = [], options = [], event, agencyCommission, formula: legacyFormula } = selection;
 
     // Totals accumulation
@@ -87,8 +91,16 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
 
     // 1. Process Formulas
     effectiveFormulas.forEach(sf => {
-        const { formula, quantity, customPrice } = sf;
+        let { formula, quantity, customPrice } = sf;
         if (quantity <= 0) return;
+
+        // REFRESH FROM CATALOGUE IF AVAILABLE
+        if (catalogueFormulas) {
+            const catFormula = catalogueFormulas.find(f => f.id === formula.id);
+            if (catFormula) {
+                formula = catFormula;
+            }
+        }
 
         const priceTtc = customPrice !== undefined ? customPrice : formula.priceTtc;
         const lineTotalTtc = priceTtc * quantity;
@@ -107,13 +119,17 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
         totalTva20 += lineHt20 * 0.2;
     });
 
-    // 2. Special case: Brunch Children (if not explicitly in formulas but Brunch Adult is)
+    // 2. Special case: Brunch Children
     const hasBrunchAdult = formulas.some(f => f.formula.id === 'BRUNCH_ADULT');
     if (hasBrunchAdult && event.childrenGuests && event.childrenGuests > 0) {
-        // Only if not already explicitly added
         const hasBrunchChild = formulas.some(f => f.formula.id === 'BRUNCH_CHILD');
         if (!hasBrunchChild) {
-            const childFormula = FORMULAS.find(f => f.id === 'BRUNCH_CHILD');
+            let childFormula = FORMULAS.find(f => f.id === 'BRUNCH_CHILD');
+            if (catalogueFormulas) {
+                const catForm = catalogueFormulas.find(f => f.id === 'BRUNCH_CHILD');
+                if (catForm) childFormula = catForm;
+            }
+
             if (childFormula) {
                 const childCount = event.childrenGuests;
                 const lineHt10 = childFormula.part10Ht * childCount;
@@ -133,7 +149,16 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
         const qty = opt.quantity;
         if (qty > 0) {
             let unitPriceHt = opt.unitPriceHt;
-            const rate = opt.vatRate;
+            let rate = opt.vatRate;
+
+            // REFRESH FROM CATALOGUE IF AVAILABLE
+            if (catalogueOptions) {
+                const catOpt = catalogueOptions.find(o => o.name === opt.name);
+                if (catOpt) {
+                    unitPriceHt = catOpt.unitPriceHt;
+                    rate = catOpt.vatRate;
+                }
+            }
 
             // DJ is free on Thu (4), Fri (5), Sat (6)
             if (opt.name === 'DJ') {

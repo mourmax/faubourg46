@@ -1,4 +1,4 @@
-import type { QuoteSelection } from '../../lib/types';
+import type { QuoteSelection, FormulaDefinition, QuoteItem } from '../../lib/types';
 import { calculateQuoteTotal } from '../../lib/quote-engine';
 import { formatCurrency } from '../../lib/utils';
 import { Download, FileText, ArrowLeft, Building2, CalendarDays, Users2, ShieldCheck } from 'lucide-react';
@@ -15,10 +15,20 @@ import { sendNotificationEmail } from '../../lib/notifications';
 interface StepSummaryProps {
     selection: QuoteSelection;
     onPrev: () => void;
+    catalogueFormulas?: FormulaDefinition[];
+    catalogueChampagnes?: QuoteItem[];
+    catalogueExtras?: QuoteItem[];
 }
 
-export function StepSummary({ selection, onPrev }: StepSummaryProps) {
-    const quote = calculateQuoteTotal(selection);
+export function StepSummary({
+    selection,
+    onPrev,
+    catalogueFormulas,
+    catalogueChampagnes,
+    catalogueExtras
+}: StepSummaryProps) {
+    const catalogueOptions = [...(catalogueChampagnes || []), ...(catalogueExtras || [])];
+    const quote = calculateQuoteTotal(selection, catalogueFormulas, catalogueOptions);
     const { contact, event, formula, options } = selection;
     const { t } = useLanguage();
     const hasSaved = useRef(false);
@@ -64,7 +74,7 @@ export function StepSummary({ selection, onPrev }: StepSummaryProps) {
 
     const handleDownload = async () => {
         try {
-            const blob = await pdf(<PdfDocument selection={selection} quote={quote} />).toBlob();
+            const blob = await pdf(<PdfDocument selection={selection} quote={quote} catalogueFormulas={catalogueFormulas} catalogueOptions={catalogueOptions} />).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;

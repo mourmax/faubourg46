@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { QuoteSelection, FormulaDefinition, AppSettings } from '../lib/types';
-import { FORMULAS as INITIAL_FORMULAS, INITIAL_SELECTION } from '../lib/data';
+import type { QuoteSelection, FormulaDefinition, QuoteItem, AppSettings } from '../lib/types';
+import { FORMULAS as INITIAL_FORMULAS, CHAMPAGNES as INITIAL_CHAMPAGNES, EXTRAS as INITIAL_EXTRAS, INITIAL_SELECTION } from '../lib/data';
 import { StepContact } from './steps/StepContact';
 import { StepMenu } from './steps/StepMenu';
 import { StepSummary } from './steps/StepSummary';
@@ -20,6 +20,14 @@ export function Wizard() {
     const [formulas] = useState<FormulaDefinition[]>(() => {
         const saved = localStorage.getItem('faubourg_formulas');
         return saved ? JSON.parse(saved) : INITIAL_FORMULAS;
+    });
+    const [champagnes] = useState<QuoteItem[]>(() => {
+        const saved = localStorage.getItem('faubourg_champagnes');
+        return saved ? JSON.parse(saved) : INITIAL_CHAMPAGNES;
+    });
+    const [extras] = useState<QuoteItem[]>(() => {
+        const saved = localStorage.getItem('faubourg_extras');
+        return saved ? JSON.parse(saved) : INITIAL_EXTRAS;
     });
     const { language, setLanguage, t } = useLanguage();
 
@@ -184,6 +192,9 @@ export function Wizard() {
                                     <StepSummary
                                         selection={selection}
                                         onPrev={prevStep}
+                                        catalogueFormulas={formulas}
+                                        catalogueChampagnes={champagnes}
+                                        catalogueExtras={extras}
                                     />
                                 )}
                             </motion.div>

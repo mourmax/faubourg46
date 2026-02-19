@@ -21,6 +21,7 @@
 ### 3. Automatisation Admin
 - **Statut du Devis :** Toute modification du statut dans l'éditeur doit être persistée immédiatement en base de données.
 - **Workflow Facturation :** Un devis peut être transformé en facture à tout moment. La facture hérite des items du devis mais permet des modifications ad-hoc sans affecter le devis original.
+- **Calculs HT & TVA :** Le système privilégie les montants HT définis dans le catalogue pour les calculs fiscaux. En cas de prix TTC personnalisé, le moteur applique un prorata basé sur les ratios HT 10%/20% du catalogue.
 
 - **Fichier de référence :** [quote-engine.ts](file:///c:/Users/matis/Desktop/FAUBOURG%20-%20DEVIS%20GROUPE/src/lib/quote-engine.ts)
 - **Fonction :** `getFormulaAvailability`
@@ -33,7 +34,8 @@
     name: string;
     type: 'TAPAS' | 'BRASSERIE';
     priceTtc: number;
-    breakdown: { ... };
+    part10Ht: number; // Part HT soumise à 10% TVA
+    part20Ht: number; // Part HT soumise à 20% TVA
     included: string[];
     restrictions?: {
         days?: number[]; // 0=Dim, 1=Lun...
@@ -71,20 +73,26 @@
 
 ## Maintenance Log
 
+### 2026-02-19
+- **Task:** Synchronisation Catalogue & Ventilation TVA.
+- **Changes:**
+    - Affichage des totaux HT/TVA dans l'Admin Catalogue.
+    - Synchronisation dynamique du `quote-engine` avec les données catalogue.
+    - Ventilation automatique (split 10%/20%) lors de la création de facture pour les formules mixtes.
+- **Status:** Completed.
+
 ### 2026-02-18
 - **Task:** Auto-save statut & Bouton Facture.
 - **Changes:**
     - Sauvegarde immédiate du statut dans `LeadEditor.tsx`.
     - Restauration du bouton "Transformer en Facture" dans le panneau financier.
-- **Status:** In Progress.
+- **Status:** Completed.
 
-## 2026-02-16
+### 2026-02-16
 - **Task:** Ajout des champs Société dans l'Admin.
-
 - **Changes:**
     - Exposer `address`, `vatNumber`, et `internalRef` dans le `LeadEditor.tsx`.
     - Synchronisation des notifications avec les clés EmailJS via `SettingsStore`.
     - Amélioration de la traçabilité des logs dans `StepSummary.tsx`.
     - **Fix:** Correction de l'erreur TS dans `StepSummary.tsx` (remplacement de `$id` par `id`).
 - **Status:** Completed.
-
