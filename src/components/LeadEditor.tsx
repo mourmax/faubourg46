@@ -1299,12 +1299,13 @@ export function LeadEditor({
                             </button>
                         </div>
 
-                        <div className="p-8 space-y-6 overflow-y-auto">
-                            {draft.invoice && (
-                                <div className="space-y-3">
+                        <div key="email-editor-content" className="p-8 space-y-6 overflow-y-auto">
+                            {draft.invoice ? (
+                                <div key="doc-type-selector" className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Type de document à joindre</label>
                                     <div className="flex p-1.5 bg-neutral-100 rounded-2xl">
                                         <button
+                                            type="button"
                                             onClick={() => handleOpenEmailEditor('QUOTE')}
                                             className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${emailConfig.type === 'QUOTE' ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
                                         >
@@ -1312,6 +1313,7 @@ export function LeadEditor({
                                             Devis
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => handleOpenEmailEditor('INVOICE')}
                                             className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${emailConfig.type === 'INVOICE' ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
                                         >
@@ -1320,9 +1322,9 @@ export function LeadEditor({
                                         </button>
                                     </div>
                                 </div>
-                            )}
+                            ) : null}
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div key="email-fields-grid" className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Destinataire</label>
                                     <Input
