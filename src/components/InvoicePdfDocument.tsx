@@ -169,6 +169,58 @@ export function InvoicePdfDocument({ selection, invoice }: Omit<InvoicePdfProps,
                     )}
                 </View>
 
+                {/* Bank Info (RIB / IBAN) */}
+                <View wrap={false} style={{ marginTop: 30, padding: 12, backgroundColor: '#F9F9F9', borderRadius: 8, border: '1px solid #EEE' }}>
+                    <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#B8860B', marginBottom: 8, textTransform: 'uppercase' }}>Coordonnées Bancaires (RIB / IBAN)</Text>
+
+                    <View style={{ flexDirection: 'row', gap: 20 }}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 8, color: '#666', marginBottom: 2 }}>Titulaire du compte (Account Owner):</Text>
+                            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>FAUBOURG 46</Text>
+                            <Text style={{ fontSize: 8 }}>46 COURS SEXTIUS</Text>
+                            <Text style={{ fontSize: 8 }}>13100 AIX EN PROVENCE</Text>
+                        </View>
+
+                        <View style={{ flex: 2 }}>
+                            <View style={{ flexDirection: 'row', borderBottom: '1px solid #EEE', paddingBottom: 4, marginBottom: 4 }}>
+                                <View style={{ marginRight: 15 }}>
+                                    <Text style={{ fontSize: 7, color: '#999' }}>Banque</Text>
+                                    <Text style={{ fontSize: 8, fontWeight: 'bold' }}>10096</Text>
+                                </View>
+                                <View style={{ marginRight: 15 }}>
+                                    <Text style={{ fontSize: 7, color: '#999' }}>Guichet</Text>
+                                    <Text style={{ fontSize: 8, fontWeight: 'bold' }}>18294</Text>
+                                </View>
+                                <View style={{ marginRight: 15 }}>
+                                    <Text style={{ fontSize: 7, color: '#999' }}>N° compte</Text>
+                                    <Text style={{ fontSize: 8, fontWeight: 'bold' }}>00028376701</Text>
+                                </View>
+                                <View>
+                                    <Text style={{ fontSize: 7, color: '#999' }}>Clé</Text>
+                                    <Text style={{ fontSize: 8, fontWeight: 'bold' }}>74</Text>
+                                </View>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                <View>
+                                    <Text style={{ fontSize: 7, color: '#999' }}>IBAN (International Bank Account Number)</Text>
+                                    <Text style={{ fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 }}>FR76 1009 6182 9400 0283 7670 174</Text>
+                                </View>
+                                <View style={{ textAlign: 'right' }}>
+                                    <Text style={{ fontSize: 7, color: '#999' }}>BIC (Bank Identifier Code)</Text>
+                                    <Text style={{ fontSize: 9, fontWeight: 'bold' }}>CMCIFRPP</Text>
+                                </View>
+                            </View>
+
+                            <Text style={{ fontSize: 7, color: '#666', marginTop: 4 }}>Domiciliation: CIC AIX MIRABEAU</Text>
+                        </View>
+                    </View>
+
+                    <Text style={{ fontSize: 8, color: '#B8860B', fontWeight: 'bold', marginTop: 8, textAlign: 'center', backgroundColor: '#FFF', padding: 4, borderRadius: 4 }}>
+                        Veuillez indiquer le numéro de facture dans le libellé de votre virement.
+                    </Text>
+                </View>
+
                 {/* Footer */}
                 <Text style={styles.footer}>
                     Faubourg 46 - 46 cours sextius 13100 aix en Provence - SIRET: 84752154900026 - TVA: FR77847521549
