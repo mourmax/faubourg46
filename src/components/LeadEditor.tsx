@@ -628,12 +628,34 @@ export function LeadEditor({
             : (settings.emailInvoiceSubject || `Votre Facture Faubourg 46 - ${draft.invoice?.invoiceNumber || ''}`);
 
         let body = type === 'QUOTE'
-            ? (settings.emailQuoteBody || `Bonjour {{client_name}},\n\nSuite à votre demande, nous avons le plaisir de vous transmettre le devis pour votre événement du ${eventDate}.\nLe montant total estimé est de ${amount}.\n\nVous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.\n\nNous restons à votre entière disposition pour toute information complémentaire.\n\nL'équipe Faubourg 46`)
-            : (settings.emailInvoiceBody || `Bonjour {{client_name}},\n\nVeuillez trouver ci-joint votre facture ${draft.invoice?.invoiceNumber || ''} pour un montant de ${amount}.\n\nVous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.\n\nNous restons à votre entière disposition pour toute information complémentaire.\n\nL'équipe Faubourg 46`);
+            ? (settings.emailQuoteBody || `Bonjour {{client_name}},\n\nSuite à votre demande, nous avons le plaisir de vous transmettre le devis pour votre événement du {{event_date}}.\n\nRécapitulatif :\n{{selection_summary}}\n\nMontant total : ${amount}\n\nVous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.\n\nNous restons à votre entière disposition pour toute information complémentaire.\n\nL'équipe Faubourg 46`)
+            : (settings.emailInvoiceBody || `Bonjour {{client_name}},\n\nVeuillez trouver ci-joint votre facture ${draft.invoice?.invoiceNumber || ''} pour un montant de ${amount}.\n\nPour votre événement du {{event_date}}.\n\nVous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.\n\nNous restons à votre entière disposition pour toute information complémentaire.\n\nL'équipe Faubourg 46`);
+
+        // Generate selection summary
+        const formulasSummary = (draft.selection.formulas || [])
+            .filter(f => f.quantity > 0)
+            .map(f => `- ${f.quantity}x ${f.formula.name}`)
+            .join('\n');
+        const optionsSummary = (draft.selection.options || [])
+            .filter(o => o.quantity > 0)
+            .map(o => `- ${o.quantity}x ${o.name}`)
+            .join('\n');
+        const selectionSummary = [formulasSummary, optionsSummary].filter(Boolean).join('\n');
 
         // Replace placeholders
-        subject = subject.replace(/{{client_name}}/g, clientName);
-        body = body.replace(/{{client_name}}/g, clientName);
+        const replacements: Record<string, string> = {
+            '{{client_name}}': clientName,
+            '{{event_date}}': eventDate,
+            '{{event_service}}': draft.selection.event.service,
+            '{{selection_summary}}': selectionSummary,
+            '{{total_amount}}': amount
+        };
+
+        Object.entries(replacements).forEach(([key, val]) => {
+            const regex = new RegExp(key, 'g');
+            subject = subject.replace(regex, val);
+            body = body.replace(regex, val);
+        });
 
         setEmailConfig({
             to: draft.selection.contact.email,

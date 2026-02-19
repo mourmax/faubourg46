@@ -370,7 +370,7 @@ export function AdminDashboard() {
                                                     placeholder="Message..."
                                                 />
                                                 <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight mt-1 ml-2">
-                                                    💡 Utilisez <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{client_name}}"}</code> pour le nom du client.
+                                                    💡 Placeholders: <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{client_name}}"}</code>, <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{event_date}}"}</code>, <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{selection_summary}}"}</code>, <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{total_amount}}"}</code>
                                                 </p>
                                             </div>
                                         </div>
@@ -400,6 +400,9 @@ export function AdminDashboard() {
                                                     onChange={(e) => handleUpdateSettings({ emailInvoiceBody: e.target.value })}
                                                     placeholder="Message..."
                                                 />
+                                                <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight mt-1 ml-2">
+                                                    💡 Placeholders: <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{client_name}}"}</code>, <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{event_date}}"}</code>, <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{selection_summary}}"}</code>, <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{total_amount}}"}</code>
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
