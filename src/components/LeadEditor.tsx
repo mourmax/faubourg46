@@ -363,7 +363,7 @@ export function LeadEditor({
     const [newComment, setNewComment] = useState('');
     const [showInvoiceEditor, setShowInvoiceEditor] = useState(false);
     const [showEmailEditor, setShowEmailEditor] = useState(false);
-    const [emailConfig, setEmailConfig] = useState({ subject: '', body: '', to: '' });
+    const [emailConfig, setEmailConfig] = useState({ subject: '', body: '', to: '', type: 'QUOTE' as 'QUOTE' | 'INVOICE' });
     const [isSendingEmail, setIsSendingEmail] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
     const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string; duration?: number } | null>(null);
@@ -614,7 +614,8 @@ export function LeadEditor({
         setEmailConfig({
             to: draft.selection.contact.email,
             subject,
-            body
+            body,
+            type
         });
         setShowEmailEditor(true);
     };
@@ -629,7 +630,7 @@ export function LeadEditor({
                     subject: emailConfig.subject,
                     message: emailConfig.body,
                     client_name: draft.selection.contact.name,
-                    download_url: `${window.location.origin}/devis/${draft.id}`
+                    download_url: `${window.location.origin}/devis/${draft.id}${emailConfig.type === 'INVOICE' ? '?doc=invoice' : ''}`
                 },
                 settings
             );
@@ -1275,6 +1276,28 @@ export function LeadEditor({
                         </div>
 
                         <div className="p-8 space-y-6 overflow-y-auto">
+                            {draft.invoice && (
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Type de document à joindre</label>
+                                    <div className="flex p-1.5 bg-neutral-100 rounded-2xl">
+                                        <button
+                                            onClick={() => handleOpenEmailEditor('QUOTE')}
+                                            className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${emailConfig.type === 'QUOTE' ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                        >
+                                            <FileText className="w-3 h-3" />
+                                            Devis
+                                        </button>
+                                        <button
+                                            onClick={() => handleOpenEmailEditor('INVOICE')}
+                                            className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${emailConfig.type === 'INVOICE' ? 'bg-white text-gold-600 shadow-xl' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                        >
+                                            <FilePlus className="w-3 h-3" />
+                                            Facture {draft.invoice.invoiceNumber}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Destinataire</label>

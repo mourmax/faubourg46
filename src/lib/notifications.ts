@@ -148,14 +148,19 @@ export const sendCustomEmail = async (
         content: params.message, // Fallback for some templates
         download_url: params.download_url || '',
         summary_html: `
-            <div style="font-family: sans-serif; white-space: pre-wrap; line-height: 1.6; color: #333;">
-                ${params.message.replace(/\n/g, '<br/>')}
+            <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; white-space: pre-wrap; line-height: 1.6; color: #333; padding: 20px; background-color: #ffffff;">
+                <div style="font-size: 16px; margin-bottom: 30px;">
+                    ${params.message.replace(/\n/g, '<br/>')}
+                </div>
                 ${params.download_url ? `
-                <div style="margin-top: 30px; text-align: center; border-top: 2px solid #af8936; padding-top: 20px;">
-                    <a href="${params.download_url}" style="background-color: #af8936; color: white; padding: 15px 30px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; font-size: 16px;">
+                <div style="margin-top: 40px; margin-bottom: 20px; text-align: center;">
+                    <a href="${params.download_url}" style="background: linear-gradient(135deg, #af8936 0%, #d4af37 100%); color: #ffffff; padding: 18px 45px; text-decoration: none; border-radius: 16px; font-weight: 900; display: inline-block; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(175, 137, 54, 0.2); border: none;">
                         Accéder au document
                     </a>
                 </div>` : ''}
+                <div style="margin-top: 40px; border-top: 2px solid #f0f0f0; padding-top: 20px; text-align: center;">
+                    <p style="font-size: 12px; color: #999; margin: 0;">Cet email a été envoyé par la plateforme de gestion Faubourg 46.</p>
+                </div>
             </div>
         `
     };
