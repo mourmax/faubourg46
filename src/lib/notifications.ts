@@ -14,9 +14,9 @@ export const sendNotificationEmail = async (
     }
 ) => {
     console.log('[Notification] Preparing to send email...', { leadId, email: settings.notificationEmail });
-    
-    if (!settings.emailJsPublicKey || !settings.emailJsTemplateId || 
-        !settings.emailJsServiceId || !settings.notificationEmail || 
+
+    if (!settings.emailJsPublicKey || !settings.emailJsTemplateId ||
+        !settings.emailJsServiceId || !settings.notificationEmail ||
         !settings.emailJsPrivateKey) {
         console.warn('[Notification] EmailJS credentials incomplete:', {
             hasPublicKey: !!settings.emailJsPublicKey,
@@ -30,7 +30,7 @@ export const sendNotificationEmail = async (
 
     const quote = calculateQuoteTotal(selection);
     const downloadUrl = `${window.location.origin}/devis/${leadId}`;
-    
+
     // Format individual items breakdown
     const formulasHtml = selection.formulas
         .filter(f => f.quantity > 0)
@@ -115,5 +115,67 @@ export const sendNotificationEmail = async (
         console.log('[Notification] Email sent successfully with download link');
     } catch (error) {
         console.error('[Notification] Failed to send email:', error);
+    }
+};
+
+export const sendCustomEmail = async (
+    params: {
+        to_email: string;
+        subject: string;
+        message: string;
+        client_name: string;
+        download_url?: string;
+    },
+    settings: {
+        emailJsPublicKey: string;
+        emailJsTemplateId: string;
+        emailJsServiceId: string;
+        emailJsPrivateKey: string;
+    }
+) => {
+    console.log('[Notification] Sending custom email to:', params.to_email);
+
+    if (!settings.emailJsPublicKey || !settings.emailJsServiceId || !settings.emailJsPrivateKey) {
+        console.error('[Notification] Missing EmailJS settings');
+        throw new Error('Configuration EmailJS incomplète');
+    }
+
+    const templateParams = {
+        to_email: params.to_email,
+        subject: params.subject,
+        client_name: params.client_name,
+        message: params.message,
+        content: params.message, // Fallback for some templates
+        download_url: params.download_url || '',
+        summary_html: `
+            <div style="font-family: sans-serif; white-space: pre-wrap; line-height: 1.6; color: #333;">
+                ${params.message.replace(/\n/g, '<br/>')}
+                ${params.download_url ? `
+                <div style="margin-top: 30px; text-align: center; border-top: 2px solid #af8936; padding-top: 20px;">
+                    <a href="${params.download_url}" style="background-color: #af8936; color: white; padding: 15px 30px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; font-size: 16px;">
+                        Accéder au document
+                    </a>
+                </div>` : ''}
+            </div>
+        `
+    };
+
+    const payload = {
+        service_id: settings.emailJsServiceId,
+        template_id: settings.emailJsTemplateId, // We reuse the template but override content
+        user_id: settings.emailJsPublicKey,
+        accessToken: settings.emailJsPrivateKey,
+        template_params: templateParams
+    };
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`EmailJS Error: ${response.status} - ${text}`);
     }
 };

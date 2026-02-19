@@ -4,7 +4,7 @@ import { Alert } from './ui/Alert';
 import type { QuoteLead, FormulaDefinition, QuoteItem, LeadStatus, InvoiceData } from '../lib/types';
 import { LeadStore } from '../lib/leads-store';
 import { SettingsStore } from '../lib/settings-store';
-import { sendNotificationEmail } from '../lib/notifications';
+import { sendNotificationEmail, sendCustomEmail } from '../lib/notifications';
 import { calculateQuoteTotal } from '../lib/quote-engine';
 import { formatCurrency } from '../lib/utils';
 import { pdf } from '@react-pdf/renderer';
@@ -28,7 +28,8 @@ import {
     Send,
     User,
     FilePlus,
-    FileEdit
+    FileEdit,
+    Mail
 } from 'lucide-react';
 
 
@@ -361,6 +362,9 @@ export function LeadEditor({
     const [draft, setDraft] = useState<QuoteLead>(initialLead);
     const [newComment, setNewComment] = useState('');
     const [showInvoiceEditor, setShowInvoiceEditor] = useState(false);
+    const [showEmailEditor, setShowEmailEditor] = useState(false);
+    const [emailConfig, setEmailConfig] = useState({ subject: '', body: '', to: '' });
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
     const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string; duration?: number } | null>(null);
     const catalogueOptions = useMemo(() => [...(catalogueChampagnes || []), ...(catalogueExtras || [])], [catalogueChampagnes, catalogueExtras]);
@@ -586,6 +590,70 @@ export function LeadEditor({
         } catch (error) {
             console.error(error);
             setAlertState({ type: 'error', title: 'Erreur de sauvegarde', message: 'Impossible d\'enregistrer la facture.' });
+        }
+    };
+
+    const handleOpenEmailEditor = (type: 'QUOTE' | 'INVOICE') => {
+        const clientName = draft.selection.contact.name;
+        const eventDate = draft.selection.event.date.toLocaleDateString('fr-FR');
+        const amount = formatCurrency(type === 'QUOTE' ? quote.totalTtc : (draft.invoice?.customItems.reduce((acc, i) => acc + i.totalTtc, 0) || 0));
+
+        const subject = type === 'QUOTE'
+            ? `Votre Devis Faubourg 46 - ${eventDate}`
+            : `Votre Facture Faubourg 46 - ${draft.invoice?.invoiceNumber || ''}`;
+
+        const body = `Bonjour ${clientName},\n\n` +
+            (type === 'QUOTE'
+                ? `Suite à votre demande, nous avons le plaisir de vous transmettre le devis pour votre événement du ${eventDate}.\n` +
+                `Le montant total estimé est de ${amount}.\n\n`
+                : `Veuillez trouver ci-joint votre facture ${draft.invoice?.invoiceNumber || ''} pour un montant de ${amount}.\n\n`) +
+            `Vous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.\n\n` +
+            `Nous restons à votre entière disposition pour toute information complémentaire.\n\n` +
+            `L'équipe Faubourg 46`;
+
+        setEmailConfig({
+            to: draft.selection.contact.email,
+            subject,
+            body
+        });
+        setShowEmailEditor(true);
+    };
+
+    const handleSendEmail = async () => {
+        setIsSendingEmail(true);
+        try {
+            const settings = await SettingsStore.getSettings();
+            await sendCustomEmail(
+                {
+                    to_email: emailConfig.to,
+                    subject: emailConfig.subject,
+                    message: emailConfig.body,
+                    client_name: draft.selection.contact.name,
+                    download_url: `${window.location.origin}/devis/${draft.id}`
+                },
+                settings
+            );
+
+            setAlertState({
+                type: 'success',
+                title: 'Email envoyé !',
+                message: `Le document a été envoyé avec succès à ${emailConfig.to}.`,
+                duration: 3000
+            });
+            setShowEmailEditor(false);
+
+            // Log as a comment
+            await LeadStore.addComment(draft.id, `📧 Email envoyé au client (${emailConfig.to})`, 'Système');
+            onUpdate();
+        } catch (error: any) {
+            console.error(error);
+            setAlertState({
+                type: 'error',
+                title: 'Échec de l\'envoi',
+                message: error?.message || 'Une erreur est survenue lors de l\'envoi de l\'email.'
+            });
+        } finally {
+            setIsSendingEmail(false);
         }
     };
 
@@ -1028,9 +1096,6 @@ export function LeadEditor({
 
                     {/* Financial Summary */}
                     <Card className="gold-gradient p-8 border-none text-white shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <Utensils className="w-20 h-20" />
-                        </div>
                         <div className="relative z-10 space-y-6">
                             <div className="space-y-1">
                                 <div className="text-[11px] font-black uppercase tracking-[0.3em] text-white/80">TOTAL DEVIS ACTUEL</div>
@@ -1060,55 +1125,94 @@ export function LeadEditor({
                                 </div>
                             </div>
 
-                            <Button
-                                onClick={handleDownloadQuote}
-                                className="w-full h-16 text-sm font-black uppercase tracking-widest bg-white text-dark-900 gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-2xl border-none mt-4"
-                            >
-                                <FileText className="w-5 h-5 text-gold-600" />
-                                Générer le Devis PDF
-                            </Button>
-
-                            {draft.invoice ? (
-                                <div className="space-y-2 mt-2">
-                                    <Button
-                                        onClick={handleDownloadInvoice}
-                                        className="w-full h-14 text-xs font-black uppercase tracking-widest bg-dark-900 text-white gap-3 shadow-xl hover:bg-neutral-800 transition-all rounded-2xl border-none"
-                                    >
-                                        <Download className="w-5 h-5" />
-                                        Générer la Facture PDF
-                                    </Button>
-                                    <Button
-                                        onClick={() => setShowInvoiceEditor(true)}
-                                        className="w-full h-12 text-[10px] font-black uppercase tracking-widest bg-white/10 text-white gap-3 hover:bg-white/20 transition-all rounded-2xl border border-white/20"
-                                    >
-                                        <FileEdit className="w-4 h-4" />
-                                        Modifier la Facture
-                                    </Button>
-                                </div>
-                            ) : (
+                            <div className="pt-6 border-t border-white/20 space-y-3">
                                 <Button
-                                    onClick={() => setShowInvoiceEditor(true)}
-                                    className="w-full h-14 text-xs font-black uppercase tracking-widest bg-dark-900 text-white gap-3 shadow-xl hover:bg-neutral-800 transition-all rounded-2xl border-none mt-2"
+                                    onClick={handleDownloadQuote}
+                                    className="w-full h-14 text-[10px] font-black bg-white text-dark-900 border-none hover:bg-neutral-50 rounded-2xl flex items-center justify-center gap-3 transition-all"
                                 >
-                                    <FilePlus className="w-5 h-5" />
-                                    Transformer en Facture
+                                    <Download className="w-4 h-4 text-gold-600" />
+                                    Télécharger Devis PDF
                                 </Button>
+
+                                <Button
+                                    onClick={() => handleOpenEmailEditor('QUOTE')}
+                                    className="w-full h-14 text-[10px] font-black bg-white/10 text-white border border-white/20 hover:bg-white/20 rounded-2xl flex items-center justify-center gap-3 transition-all"
+                                >
+                                    <Mail className="w-4 h-4 text-gold-500" />
+                                    Envoyer le devis par mail
+                                </Button>
+                            </div>
+
+                            {((draft.status === 'VALIDATED' || draft.invoice) && !showInvoiceEditor) && (
+                                <div className="pt-6 border-t border-white/20 space-y-3">
+                                    <h4 className="text-[10px] font-black text-white/80 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                        <FileText className="w-4 h-4 text-gold-500" />
+                                        Gestion Facturation
+                                    </h4>
+
+                                    {draft.invoice ? (
+                                        <div className="space-y-3">
+                                            <div className="p-4 bg-white/10 rounded-2xl border border-white/10">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">Facture {draft.invoice.invoiceNumber}</span>
+                                                    <span className="text-[9px] font-black text-green-400 uppercase tracking-widest">PRÊTE</span>
+                                                </div>
+                                                <div className="text-sm font-black text-white">
+                                                    {formatCurrency(draft.invoice.customItems.reduce((acc, i) => acc + i.totalTtc, 0))}
+                                                </div>
+                                            </div>
+
+                                            <Button
+                                                onClick={handleDownloadInvoice}
+                                                className="w-full h-12 text-[9px] font-black bg-white text-dark-900 hover:bg-neutral-50 rounded-xl flex items-center justify-center gap-3 border-none"
+                                            >
+                                                <Download className="w-4 h-4 text-gold-600" />
+                                                Télécharger la Facture
+                                            </Button>
+
+                                            <Button
+                                                onClick={() => handleOpenEmailEditor('INVOICE')}
+                                                className="w-full h-12 text-[9px] font-black bg-white/10 text-white border border-white/20 hover:bg-white/20 rounded-xl flex items-center justify-center gap-3"
+                                            >
+                                                <Mail className="w-4 h-4 text-gold-500" />
+                                                Envoyer la facture par mail
+                                            </Button>
+
+                                            <Button
+                                                onClick={() => setShowInvoiceEditor(true)}
+                                                className="w-full h-12 text-[9px] font-black bg-white/5 text-white/60 hover:text-white rounded-xl flex items-center justify-center gap-3"
+                                            >
+                                                <FileEdit className="w-4 h-4" />
+                                                Modifier la Facture
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            onClick={() => setShowInvoiceEditor(true)}
+                                            className="w-full h-14 text-[10px] font-black bg-white text-dark-900 hover:bg-neutral-50 rounded-2xl flex items-center justify-center gap-3 transition-all border-none"
+                                        >
+                                            <FilePlus className="w-5 h-5 text-gold-600" />
+                                            Générer la Facture
+                                        </Button>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </Card>
 
-                    <Button
-                        onClick={handleResendNotification}
-                        disabled={isSendingNotification}
-                        className="w-full h-14 text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 gap-3 border-blue-100 hover:bg-blue-100 transition-all rounded-2xl"
-                        variant="outline"
-                    >
-                        {isSendingNotification ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        Renvoyer notification email
-                    </Button>
+                    <Card className="bg-white p-6 border-none shadow-xl shadow-dark-900/5 rounded-[2rem] space-y-4">
+                        <Button
+                            onClick={handleResendNotification}
+                            disabled={isSendingNotification}
+                            className="w-full h-12 text-[9px] font-black bg-neutral-50 text-neutral-600 hover:bg-neutral-100 rounded-xl flex items-center justify-center gap-3 border-none"
+                        >
+                            {isSendingNotification ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            Alerte Interne (EmailJS)
+                        </Button>
+                    </Card>
 
                     {/* Tracking Comments */}
-                    <Card className="bg-white p-8 border-none flex flex-col h-[600px] shadow-2xl">
+                    <Card className="bg-white p-8 border-none flex flex-col h-[600px] shadow-xl shadow-dark-900/5 rounded-[2.5rem]">
                         <div className="flex items-center gap-4 border-b border-neutral-100 pb-6 mb-6">
                             <MessageSquare className="w-6 h-6 text-gold-600" />
                             <h3 className="text-lg font-black text-neutral-900 uppercase tracking-widest">Suivi & Notes</h3>
@@ -1134,14 +1238,14 @@ export function LeadEditor({
                         <form onSubmit={handleAddComment} className="mt-auto space-y-3">
                             <textarea
                                 className="w-full h-24 bg-neutral-50 border border-neutral-200 rounded-xl p-4 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-gold-500 focus:bg-white outline-none transition-all resize-none shadow-sm"
-                                placeholder="Ajouter un commentaire de suivi..."
+                                placeholder="Ajouter une note..."
                                 value={newComment}
                                 onChange={e => setNewComment(e.target.value)}
                             />
                             <Button
                                 type="submit"
                                 disabled={!newComment.trim()}
-                                className="w-full h-12 text-xs font-black uppercase tracking-widest gap-2 bg-neutral-900 text-white hover:bg-black"
+                                className="w-full h-12 text-xs font-black uppercase tracking-widest gap-2 bg-neutral-900 text-white hover:bg-black rounded-xl border-none"
                             >
                                 <Send className="w-4 h-4" />
                                 Ajouter Note
@@ -1150,6 +1254,78 @@ export function LeadEditor({
                     </Card>
                 </div>
             </div>
+
+            {/* Email Editor Modal */}
+            {showEmailEditor && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <Card className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl border-none overflow-hidden max-h-[90vh] flex flex-col">
+                        <div className="p-8 border-b border-neutral-100 flex justify-between items-center bg-gold-50/30">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-gold-500 rounded-2xl flex items-center justify-center shadow-lg shadow-gold-500/20">
+                                    <Mail className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-dark-900 uppercase tracking-tighter">Préparation de l'envoi</h3>
+                                    <p className="text-[10px] font-black text-gold-600 uppercase tracking-widest mt-1">Envoi au client par EmailJS</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowEmailEditor(false)} className="text-neutral-400 hover:text-dark-900 transition-colors">
+                                <ArrowLeft className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-8 space-y-6 overflow-y-auto">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Destinataire</label>
+                                    <Input
+                                        className="bg-neutral-50 border-neutral-100 text-neutral-900 h-12 rounded-xl"
+                                        value={emailConfig.to}
+                                        onChange={e => setEmailConfig(prev => ({ ...prev, to: e.target.value }))}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Objet</label>
+                                    <Input
+                                        className="bg-neutral-50 border-neutral-100 text-neutral-900 h-12 rounded-xl"
+                                        value={emailConfig.subject}
+                                        onChange={e => setEmailConfig(prev => ({ ...prev, subject: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Message</label>
+                                <textarea
+                                    className="w-full h-64 bg-neutral-50 border border-neutral-100 rounded-2xl p-6 text-sm font-medium text-dark-900 focus:bg-white focus:border-gold-500 outline-none transition-all resize-none"
+                                    value={emailConfig.body}
+                                    onChange={e => setEmailConfig(prev => ({ ...prev, body: e.target.value }))}
+                                />
+                                <p className="text-[10px] text-neutral-400 font-black uppercase tracking-tighter mt-2 ml-2 italic">
+                                    💡 Un bouton "Accéder au document" sera automatiquement ajouté à la fin du message.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="p-8 border-t border-neutral-100 bg-neutral-50/50 flex gap-4">
+                            <Button
+                                onClick={() => setShowEmailEditor(false)}
+                                className="flex-1 h-14 text-[10px] font-black bg-white text-neutral-900 border border-neutral-200 hover:bg-neutral-100 rounded-2xl uppercase tracking-widest"
+                            >
+                                Annuler
+                            </Button>
+                            <Button
+                                onClick={handleSendEmail}
+                                disabled={isSendingEmail || !emailConfig.to}
+                                className="flex-1 h-14 text-[10px] font-black gold-gradient text-white shadow-xl shadow-gold-500/20 border-none rounded-2xl flex items-center justify-center gap-3 uppercase tracking-widest"
+                            >
+                                {isSendingEmail ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                Envoyer maintenant
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            )}
 
             {/* Invoice Editor Modal */}
             {showInvoiceEditor && (
