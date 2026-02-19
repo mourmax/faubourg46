@@ -118,33 +118,41 @@ export const PdfDocument = ({ selection, quote, reference, catalogueFormulas, ca
                 </View>
 
                 {/* Formulas */}
-                {(selection.formulas || []).map((sf, idx) => (
-                    <View key={`formula-${idx}`} style={[styles.tableRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
-                        <View style={{ flexDirection: 'row' }}>
-                            <Text style={[styles.colDesc, { fontWeight: 'bold' }]}>Formule: {sf.formula.name}</Text>
-                            <Text style={styles.colQty}>{sf.quantity}</Text>
-                            <Text style={styles.colPrice}>{formatCurrency(sf.customPrice ?? sf.formula.priceTtc)}</Text>
-                            <Text style={styles.colTotal}>{formatCurrency((sf.customPrice ?? sf.formula.priceTtc) * sf.quantity)}</Text>
-                        </View>
-                        {sf.formula.included && sf.formula.included.length > 0 && (
-                            <View style={{ marginLeft: 10, marginTop: 4 }}>
-                                <Text style={{ fontSize: 8, color: '#666', fontStyle: 'italic' }}>
-                                    Inclus: {sf.formula.included.join(', ')}
-                                </Text>
+                {(selection.formulas || []).map((sf, idx) => {
+                    const formula = catalogueFormulas?.find(f => f.id === sf.formula.id) || sf.formula;
+                    const priceTtc = sf.customPrice ?? formula.priceTtc;
+
+                    return (
+                        <View key={`formula-${idx}`} style={[styles.tableRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <Text style={[styles.colDesc, { fontWeight: 'bold' }]}>Formule: {formula.name}</Text>
+                                <Text style={styles.colQty}>{sf.quantity}</Text>
+                                <Text style={styles.colPrice}>{formatCurrency(priceTtc)}</Text>
+                                <Text style={styles.colTotal}>{formatCurrency(priceTtc * sf.quantity)}</Text>
                             </View>
-                        )}
-                    </View>
-                ))}
+                            {formula.included && formula.included.length > 0 && (
+                                <View style={{ marginLeft: 10, marginTop: 4 }}>
+                                    <Text style={{ fontSize: 8, color: '#666', fontStyle: 'italic' }}>
+                                        Inclus: {formula.included.join(', ')}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    );
+                })}
 
                 {/* If no formulas (legacy or empty), show the single formula if it exists */}
-                {selection.formulas.length === 0 && selection.formula && (
-                    <View style={styles.tableRow}>
-                        <Text style={styles.colDesc}>Formule: {selection.formula.name}</Text>
-                        <Text style={styles.colQty}>{selection.event.guests}</Text>
-                        <Text style={styles.colPrice}>{formatCurrency(selection.formula.priceTtc)}</Text>
-                        <Text style={styles.colTotal}>{formatCurrency(selection.formula.priceTtc * selection.event.guests)}</Text>
-                    </View>
-                )}
+                {selection.formulas.length === 0 && selection.formula && (() => {
+                    const formula = catalogueFormulas?.find(f => f.id === selection.formula?.id) || selection.formula;
+                    return (
+                        <View style={styles.tableRow}>
+                            <Text style={styles.colDesc}>Formule: {formula.name}</Text>
+                            <Text style={styles.colQty}>{selection.event.guests}</Text>
+                            <Text style={styles.colPrice}>{formatCurrency(formula.priceTtc)}</Text>
+                            <Text style={styles.colTotal}>{formatCurrency(formula.priceTtc * selection.event.guests)}</Text>
+                        </View>
+                    );
+                })()}
 
                 {/* Children Formula (Implicitly assumed for Brunch if children > 0 and not explicitly added) */}
                 {selection.formulas.some(sf => sf.formula.id.includes('BRUNCH')) &&
@@ -169,14 +177,19 @@ export const PdfDocument = ({ selection, quote, reference, catalogueFormulas, ca
                 )}
 
                 {/* Supplementary Options (Champagnes, Extras) */}
-                {selection.options && selection.options.length > 0 && selection.options.map((option, idx) => (
-                    <View key={`option-${idx}`} style={styles.tableRow}>
-                        <Text style={styles.colDesc}>Option: {option.name}</Text>
-                        <Text style={styles.colQty}>{option.quantity}</Text>
-                        <Text style={styles.colPrice}>{formatCurrency(option.unitPriceTtc)}</Text>
-                        <Text style={styles.colTotal}>{formatCurrency(option.totalTtc)}</Text>
-                    </View>
-                ))}
+                {selection.options && selection.options.length > 0 && selection.options.map((option, idx) => {
+                    const catOpt = catalogueOptions?.find(o => o.name === option.name);
+                    const name = catOpt?.name || option.name;
+
+                    return (
+                        <View key={`option-${idx}`} style={styles.tableRow}>
+                            <Text style={styles.colDesc}>Option: {name}</Text>
+                            <Text style={styles.colQty}>{option.quantity}</Text>
+                            <Text style={styles.colPrice}>{formatCurrency(option.unitPriceTtc)}</Text>
+                            <Text style={styles.colTotal}>{formatCurrency(option.totalTtc)}</Text>
+                        </View>
+                    );
+                })}
             </View>
 
             {/* Totals */}
