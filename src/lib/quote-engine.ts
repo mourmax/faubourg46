@@ -94,17 +94,17 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
         const lineTotalTtc = priceTtc * quantity;
         totalTtc += lineTotalTtc;
 
-        // Breakdown VAT based on formula's breakdown ratio if standard price,
-        // or proportional breakdown if custom price.
-        // For simplicity, we use the breakdown ratio from the formula definition.
-        // However, the formula definition already has ht/tva per person.
-        // If price is custom, we scale these proportionately.
-        const scaleFactor = priceTtc / formula.priceTtc;
+        // If price is custom, we scale HT parts proportionately based on the original formula parts
+        const originalTtc = formula.priceTtc || (formula.part10Ht * 1.1 + formula.part20Ht * 1.2);
+        const scaleFactor = originalTtc > 0 ? priceTtc / originalTtc : 1;
 
-        totalHt10 += formula.breakdown.part10.ht * quantity * scaleFactor;
-        totalTva10 += formula.breakdown.part10.tva * quantity * scaleFactor;
-        totalHt20 += formula.breakdown.part20.ht * quantity * scaleFactor;
-        totalTva20 += formula.breakdown.part20.tva * quantity * scaleFactor;
+        const lineHt10 = formula.part10Ht * quantity * scaleFactor;
+        const lineHt20 = formula.part20Ht * quantity * scaleFactor;
+
+        totalHt10 += lineHt10;
+        totalTva10 += lineHt10 * 0.1;
+        totalHt20 += lineHt20;
+        totalTva20 += lineHt20 * 0.2;
     });
 
     // 2. Special case: Brunch Children (if not explicitly in formulas but Brunch Adult is)
@@ -116,11 +116,14 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
             const childFormula = FORMULAS.find(f => f.id === 'BRUNCH_CHILD');
             if (childFormula) {
                 const childCount = event.childrenGuests;
-                totalTtc += childFormula.priceTtc * childCount;
-                totalHt10 += childFormula.breakdown.part10.ht * childCount;
-                totalTva10 += childFormula.breakdown.part10.tva * childCount;
-                totalHt20 += childFormula.breakdown.part20.ht * childCount;
-                totalTva20 += childFormula.breakdown.part20.tva * childCount;
+                const lineHt10 = childFormula.part10Ht * childCount;
+                const lineHt20 = childFormula.part20Ht * childCount;
+
+                totalTtc += (lineHt10 * 1.1) + (lineHt20 * 1.2);
+                totalHt10 += lineHt10;
+                totalTva10 += lineHt10 * 0.1;
+                totalHt20 += lineHt20;
+                totalTva20 += lineHt20 * 0.2;
             }
         }
     }
@@ -129,34 +132,30 @@ export const calculateQuoteTotal = (selection: QuoteSelection) => {
     options.forEach(opt => {
         const qty = opt.quantity;
         if (qty > 0) {
-            let unitPrice = opt.unitPriceTtc;
+            let unitPriceHt = opt.unitPriceHt;
+            const rate = opt.vatRate;
 
             // DJ is free on Thu (4), Fri (5), Sat (6)
             if (opt.name === 'DJ') {
                 const day = event.date.getDay();
                 if (day === 4 || day === 5 || day === 6) {
-                    unitPrice = 0;
+                    unitPriceHt = 0;
                 }
             }
 
-            // Birthday Cake logic
-            if (opt.name === 'Gâteau d’anniversaire') {
-                unitPrice = 4.50; // Requested: 4.5€/pers for all
-            }
+            const multiplier = opt.name === 'Gâteau d’anniversaire' ? event.guests : qty;
+            const lineHt = unitPriceHt * multiplier;
+            const lineTva = lineHt * (rate / 100);
+            const lineTtc = lineHt + lineTva;
 
-            const lineTtc = unitPrice * (opt.name === 'Gâteau d’anniversaire' ? event.guests : qty);
             totalTtc += lineTtc;
 
-            const rate = opt.vatRate;
-            const ht = lineTtc / (1 + rate / 100);
-            const tva = lineTtc - ht;
-
             if (rate === 10) {
-                totalHt10 += ht;
-                totalTva10 += tva;
+                totalHt10 += lineHt;
+                totalTva10 += lineTva;
             } else {
-                totalHt20 += ht;
-                totalTva20 += tva;
+                totalHt20 += lineHt;
+                totalTva20 += lineTva;
             }
         }
     });

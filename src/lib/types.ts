@@ -10,10 +10,6 @@ export interface FormulaPriceDetail {
     baseHt: number;
     vat10: number;
     vat20: number;
-    totalTtc: number;
-    // Specific breakdown as per PRD
-    part10: { ht: number; tva: number };
-    part20: { ht: number; tva: number };
 }
 
 export interface FormulaDefinition {
@@ -21,7 +17,8 @@ export interface FormulaDefinition {
     name: string;
     type: 'TAPAS' | 'BRASSERIE';
     priceTtc: number;
-    breakdown: FormulaPriceDetail;
+    part10Ht: number;
+    part20Ht: number;
     restrictions?: {
         days?: number[]; // [0,1,2,3,4] for Sun-Thu
         services?: ('LUNCH' | 'DINNER_1' | 'DINNER_2' | 'DINNER_FULL')[];
@@ -40,6 +37,7 @@ export interface SelectedFormula {
 export interface QuoteItem {
     name: string;
     quantity: number;
+    unitPriceHt: number;
     unitPriceTtc: number;
     totalTtc: number;
     vatRate: VatRate;
@@ -135,4 +133,3 @@ export interface AppSettings {
     emailJsServiceId: string;
     emailJsPrivateKey: string;
 }
-

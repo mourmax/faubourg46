@@ -4,13 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/components';
 import { LogOut, LayoutDashboard, Database, Briefcase, Plus, Settings, MessageCircle, Save, Loader2 } from 'lucide-react';
 import { FORMULAS as INITIAL_FORMULAS, CHAMPAGNES as INITIAL_CHAMPAGNES, EXTRAS as INITIAL_EXTRAS, INITIAL_SELECTION } from '../lib/data';
-import type { FormulaDefinition, QuoteItem, QuoteLead, AppSettings } from '../lib/types';
+import type { FormulaDefinition, QuoteItem, QuoteLead, AppSettings, VatRate } from '../lib/types';
 import { AdminCatalogue } from './AdminCatalogue';
 import { AdminLeads } from './AdminLeads';
 import { LeadEditor } from './LeadEditor';
 import { LeadStore } from '../lib/leads-store';
 import { SettingsStore } from '../lib/settings-store';
-// Removed unused Card import
 
 export function AdminDashboard() {
     const { isAuthenticated, logout } = useAuth();
@@ -46,11 +45,9 @@ export function AdminDashboard() {
     }, [isAuthenticated, navigate]);
 
     const handleToggleWhatsapp = () => {
-        // Ensure settings exists, default to disabled if not
         const currentStatus = settings?.whatsappEnabled ?? false;
         const newStatus = !currentStatus;
 
-        // If settings doesn't exist yet, we create a default object
         const updatedSettings: AppSettings = {
             whatsappEnabled: newStatus,
             whatsappNumber: settings?.whatsappNumber || '33600000000',
@@ -105,17 +102,27 @@ export function AdminDashboard() {
         }
     };
 
-    const handlePriceChange = (id: string, newPrice: number) => {
-        setFormulas(prev => prev.map(f =>
-            f.id === id ? { ...f, priceTtc: newPrice } : f
-        ));
+    const handleFormulaChange = (id: string, field: 'part10Ht' | 'part20Ht', value: number) => {
+        setFormulas(prev => prev.map(f => {
+            if (f.id === id) {
+                const updated = { ...f, [field]: value };
+                updated.priceTtc = Number((updated.part10Ht * 1.1 + updated.part20Ht * 1.2).toFixed(2));
+                return updated;
+            }
+            return f;
+        }));
     };
 
-    const handleOptionPriceChange = (name: string, newPrice: number, type: 'champagne' | 'extra') => {
+    const handleOptionChange = (name: string, field: 'unitPriceHt' | 'vatRate', value: number, type: 'champagne' | 'extra') => {
         const setter = type === 'champagne' ? setChampagnes : setExtras;
-        setter(prev => prev.map(item =>
-            item.name === name ? { ...item, unitPriceTtc: newPrice } : item
-        ));
+        setter(prev => prev.map(item => {
+            if (item.name === name) {
+                const updated = { ...item, [field]: value };
+                updated.unitPriceTtc = Number((updated.unitPriceHt * (1 + (updated.vatRate || 20) / 100)).toFixed(2));
+                return updated;
+            }
+            return item;
+        }));
     };
 
     const handleSave = () => {
@@ -134,14 +141,12 @@ export function AdminDashboard() {
 
     return (
         <div className="min-h-screen bg-neutral-50 p-4 md:p-8 flex flex-col items-center">
-            {/* Background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-gold-500/5 rounded-full blur-[120px]" />
                 <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-gold-500/5 rounded-full blur-[100px]" />
             </div>
 
             <div className="w-full max-w-6xl space-y-12 relative z-10 pb-20">
-                {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-neutral-200 pb-8 gap-6">
                     <div className="text-center md:text-left">
                         <div className="flex items-center justify-center md:justify-start gap-4 mb-3">
@@ -198,7 +203,6 @@ export function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Content Area */}
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {editingLead ? (
                         <LeadEditor
@@ -215,8 +219,8 @@ export function AdminDashboard() {
                             formulas={formulas}
                             champagnes={champagnes}
                             extras={extras}
-                            onPriceChange={handlePriceChange}
-                            onOptionPriceChange={handleOptionPriceChange}
+                            onFormulaChange={handleFormulaChange}
+                            onOptionChange={handleOptionChange}
                             onSave={handleSave}
                         />
                     ) : currentTab === 'SETTINGS' ? (
@@ -253,6 +257,7 @@ export function AdminDashboard() {
                                                 onChange={(e) => handleUpdateWhatsappNumber(e.target.value)}
                                                 placeholder="336..."
                                             />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -340,8 +345,6 @@ export function AdminDashboard() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
                         </div>
                     ) : (
                         <AdminLeads key={refreshTrigger} onEdit={setEditingLead} />
