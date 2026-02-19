@@ -132,4 +132,8 @@ export interface AppSettings {
     emailJsTemplateId: string;
     emailJsServiceId: string;
     emailJsPrivateKey: string;
+    emailQuoteSubject?: string;
+    emailQuoteBody?: string;
+    emailInvoiceSubject?: string;
+    emailInvoiceBody?: string;
 }

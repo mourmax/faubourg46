@@ -11,9 +11,11 @@ export const sendNotificationEmail = async (
         emailJsTemplateId: string;
         emailJsServiceId: string;
         emailJsPrivateKey: string;
-    }
+    },
+    attachment?: { base64: string; name: string },
+    isInvoice: boolean = false
 ) => {
-    console.log('[Notification] Preparing to send email...', { leadId, email: settings.notificationEmail });
+    console.log(`[Notification] Preparing to send ${isInvoice ? 'invoice' : 'quote'} email...`, { leadId, email: settings.notificationEmail });
 
     if (!settings.emailJsPublicKey || !settings.emailJsTemplateId ||
         !settings.emailJsServiceId || !settings.notificationEmail ||
@@ -29,15 +31,15 @@ export const sendNotificationEmail = async (
     }
 
     const quote = calculateQuoteTotal(selection);
-    const downloadUrl = `${window.location.origin}/devis/${leadId}`;
+    const downloadUrl = `${window.location.origin}/devis/${leadId}${isInvoice ? '?doc=invoice' : ''}`;
 
     // Format individual items breakdown
-    const formulasHtml = selection.formulas
+    const formulasHtml = (selection.formulas || [])
         .filter(f => f.quantity > 0)
         .map(f => `<li>${f.quantity}x ${f.formula.name} - ${formatCurrency((f.customPrice ?? f.formula.priceTtc) * f.quantity)}</li>`)
         .join('');
 
-    const optionsHtml = selection.options
+    const optionsHtml = (selection.options || [])
         .filter(o => o.quantity > 0)
         .map(o => `<li>${o.quantity}x ${o.name} - ${formatCurrency(o.totalTtc)}</li>`)
         .join('');
@@ -48,7 +50,7 @@ export const sendNotificationEmail = async (
 
     const summaryHtml = `
         <div style="font-family: sans-serif; line-height: 1.5; color: #333;">
-            <h2 style="color: #af8936;">Nouveau Devis Faubourg 46</h2>
+            <h2 style="color: ${isInvoice ? '#2563eb' : '#af8936'};">Nouvelle ${isInvoice ? 'Facture' : 'Demande De Devis'} Faubourg 46</h2>
             <p><strong>Client:</strong> ${selection.contact.name} (${selection.contact.email} / ${selection.contact.phone})</p>
             <p><strong>Événement:</strong> ${new Date(selection.event.date).toLocaleDateString('fr-FR')} - ${selection.event.service}</p>
             <p><strong>Convives:</strong> ${selection.event.guests} Adultes ${selection.event.childrenGuests ? `+ ${selection.event.childrenGuests} Enfants` : ''}</p>
@@ -86,8 +88,10 @@ export const sendNotificationEmail = async (
         event_service: selection.event.service,
         total_ttc: formatCurrency(quote.totalTtc),
         summary_html: summaryHtml,
-        content: `Nouveau devis de ${selection.contact.name} pour le ${new Date(selection.event.date).toLocaleDateString('fr-FR')}`,
-        download_url: downloadUrl
+        content: `Nouveau ${isInvoice ? 'facture' : 'devis'} de ${selection.contact.name} pour le ${new Date(selection.event.date).toLocaleDateString('fr-FR')}`,
+        download_url: downloadUrl,
+        content_type: isInvoice ? 'INVOICE' : 'QUOTE',
+        attachment: attachment ? attachment.base64 : ''
     };
 
     try {
@@ -95,7 +99,7 @@ export const sendNotificationEmail = async (
             service_id: settings.emailJsServiceId,
             template_id: settings.emailJsTemplateId,
             user_id: settings.emailJsPublicKey,
-            accessToken: settings.emailJsPrivateKey, // Use accessToken for authentication
+            accessToken: settings.emailJsPrivateKey,
             template_params: templateParams
         };
 
@@ -112,7 +116,7 @@ export const sendNotificationEmail = async (
             throw new Error(`EmailJS Error: ${response.status} - ${errorText}`);
         }
 
-        console.log('[Notification] Email sent successfully with download link');
+        console.log('[Notification] Email sent successfully');
     } catch (error) {
         console.error('[Notification] Failed to send email:', error);
     }
@@ -145,7 +149,7 @@ export const sendCustomEmail = async (
         subject: params.subject,
         client_name: params.client_name,
         message: params.message,
-        content: params.message, // Fallback for some templates
+        content: params.message,
         download_url: params.download_url || '',
         summary_html: `
             <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; white-space: pre-wrap; line-height: 1.6; color: #333; padding: 20px; background-color: #ffffff;">
@@ -167,7 +171,7 @@ export const sendCustomEmail = async (
 
     const payload = {
         service_id: settings.emailJsServiceId,
-        template_id: settings.emailJsTemplateId, // We reuse the template but override content
+        template_id: settings.emailJsTemplateId,
         user_id: settings.emailJsPublicKey,
         accessToken: settings.emailJsPrivateKey,
         template_params: templateParams

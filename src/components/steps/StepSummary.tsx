@@ -55,8 +55,27 @@ export function StepSummary({
                             hasPrivateKey: !!settings.emailJsPrivateKey
                         });
 
-                        // 3. Send Email Notification
-                        await sendNotificationEmail(selection, newLead.id, settings);
+                        // 3. Generate PDF for attachment
+                        let attachment;
+                        try {
+                            const quoteData = calculateQuoteTotal(selection, catalogueFormulas, catalogueOptions);
+                            const blob = await pdf(<PdfDocument selection={selection} quote={quoteData} catalogueFormulas={catalogueFormulas} catalogueOptions={catalogueOptions} />).toBlob();
+                            const reader = new FileReader();
+                            const base64Promise = new Promise<string>((resolve) => {
+                                reader.onloadend = () => resolve(reader.result as string);
+                            });
+                            reader.readAsDataURL(blob);
+                            const base64Data = await base64Promise;
+                            attachment = {
+                                base64: base64Data,
+                                name: `Devis_${selection.contact.name.replace(/\s+/g, '_')}.pdf`
+                            };
+                        } catch (pdfErr) {
+                            console.error('Failed to generate PDF for attachment', pdfErr);
+                        }
+
+                        // 4. Send Email Notification with attachment
+                        await sendNotificationEmail(selection, newLead.id, settings, attachment);
                         console.log('[StepSummary] Notification process completed');
                     } else {
                         console.error('[StepSummary] Failed to save lead - no ID returned');

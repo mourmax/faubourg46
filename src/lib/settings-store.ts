@@ -11,7 +11,11 @@ const DEFAULT_SETTINGS: AppSettings = {
     emailJsPublicKey: '',
     emailJsTemplateId: '',
     emailJsServiceId: 'service_54e2uef',
-    emailJsPrivateKey: ''
+    emailJsPrivateKey: '',
+    emailQuoteSubject: 'Votre Devis Faubourg 46',
+    emailQuoteBody: 'Bonjour {{client_name}},\n\nSuite à votre demande, nous avons le plaisir de vous transmettre le devis pour votre événement.\n\nVous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.',
+    emailInvoiceSubject: 'Votre Facture Faubourg 46',
+    emailInvoiceBody: 'Bonjour {{client_name}},\n\nVeuillez trouver ci-joint votre facture pour votre événement.\n\nVous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.'
 };
 
 export const SettingsStore = {
@@ -25,7 +29,11 @@ export const SettingsStore = {
                 emailJsPublicKey: doc.emailJsPublicKey || DEFAULT_SETTINGS.emailJsPublicKey,
                 emailJsTemplateId: doc.emailJsTemplateId || DEFAULT_SETTINGS.emailJsTemplateId,
                 emailJsServiceId: doc.emailJsServiceId || DEFAULT_SETTINGS.emailJsServiceId,
-                emailJsPrivateKey: doc.emailJsPrivateKey || DEFAULT_SETTINGS.emailJsPrivateKey
+                emailJsPrivateKey: doc.emailJsPrivateKey || DEFAULT_SETTINGS.emailJsPrivateKey,
+                emailQuoteSubject: doc.emailQuoteSubject || DEFAULT_SETTINGS.emailQuoteSubject,
+                emailQuoteBody: doc.emailQuoteBody || DEFAULT_SETTINGS.emailQuoteBody,
+                emailInvoiceSubject: doc.emailInvoiceSubject || DEFAULT_SETTINGS.emailInvoiceSubject,
+                emailInvoiceBody: doc.emailInvoiceBody || DEFAULT_SETTINGS.emailInvoiceBody
             };
         } catch (e: any) {
 

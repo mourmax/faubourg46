@@ -587,29 +587,53 @@ export function LeadEditor({
             setShowInvoiceEditor(false);
             onUpdate();
             setAlertState({ type: 'success', title: 'Facture enregistrée !', message: `Facture ${invoiceData.invoiceNumber} créée avec succès.` });
+
+            // Send notification to admin with invoice attachment
+            try {
+                const settings = await SettingsStore.getSettings();
+                const blob = await pdf(<InvoicePdfDocument selection={draft.selection} invoice={invoiceData} />).toBlob();
+                const reader = new FileReader();
+                const base64Promise = new Promise<string>((resolve) => {
+                    reader.onloadend = () => resolve(reader.result as string);
+                });
+                reader.readAsDataURL(blob);
+                const base64Data = await base64Promise;
+
+                await sendNotificationEmail(
+                    draft.selection,
+                    draft.id,
+                    settings,
+                    { base64: base64Data, name: `Facture_${invoiceData.invoiceNumber}.pdf` },
+                    true
+                );
+            } catch (notifyErr) {
+                console.error('Failed to send invoice notification', notifyErr);
+            }
+
         } catch (error) {
             console.error(error);
             setAlertState({ type: 'error', title: 'Erreur de sauvegarde', message: 'Impossible d\'enregistrer la facture.' });
         }
     };
 
-    const handleOpenEmailEditor = (type: 'QUOTE' | 'INVOICE') => {
+    const handleOpenEmailEditor = async (type: 'QUOTE' | 'INVOICE') => {
         const clientName = draft.selection.contact.name;
         const eventDate = draft.selection.event.date.toLocaleDateString('fr-FR');
         const amount = formatCurrency(type === 'QUOTE' ? quote.totalTtc : (draft.invoice?.customItems.reduce((acc, i) => acc + i.totalTtc, 0) || 0));
 
-        const subject = type === 'QUOTE'
-            ? `Votre Devis Faubourg 46 - ${eventDate}`
-            : `Votre Facture Faubourg 46 - ${draft.invoice?.invoiceNumber || ''}`;
+        const settings = await SettingsStore.getSettings();
 
-        const body = `Bonjour ${clientName},\n\n` +
-            (type === 'QUOTE'
-                ? `Suite à votre demande, nous avons le plaisir de vous transmettre le devis pour votre événement du ${eventDate}.\n` +
-                `Le montant total estimé est de ${amount}.\n\n`
-                : `Veuillez trouver ci-joint votre facture ${draft.invoice?.invoiceNumber || ''} pour un montant de ${amount}.\n\n`) +
-            `Vous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.\n\n` +
-            `Nous restons à votre entière disposition pour toute information complémentaire.\n\n` +
-            `L'équipe Faubourg 46`;
+        let subject = type === 'QUOTE'
+            ? (settings.emailQuoteSubject || `Votre Devis Faubourg 46 - ${eventDate}`)
+            : (settings.emailInvoiceSubject || `Votre Facture Faubourg 46 - ${draft.invoice?.invoiceNumber || ''}`);
+
+        let body = type === 'QUOTE'
+            ? (settings.emailQuoteBody || `Bonjour {{client_name}},\n\nSuite à votre demande, nous avons le plaisir de vous transmettre le devis pour votre événement du ${eventDate}.\nLe montant total estimé est de ${amount}.\n\nVous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.\n\nNous restons à votre entière disposition pour toute information complémentaire.\n\nL'équipe Faubourg 46`)
+            : (settings.emailInvoiceBody || `Bonjour {{client_name}},\n\nVeuillez trouver ci-joint votre facture ${draft.invoice?.invoiceNumber || ''} pour un montant de ${amount}.\n\nVous pouvez consulter et télécharger le document complet en cliquant sur le bouton ci-dessous.\n\nNous restons à votre entière disposition pour toute information complémentaire.\n\nL'équipe Faubourg 46`);
+
+        // Replace placeholders
+        subject = subject.replace(/{{client_name}}/g, clientName);
+        body = body.replace(/{{client_name}}/g, clientName);
 
         setEmailConfig({
             to: draft.selection.contact.email,

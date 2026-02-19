@@ -29,3 +29,10 @@
 - [x] Mettre à jour `InvoiceEditor.tsx` pour ventiler automatiquement les formules sur 2 lignes de TVA (10% et 20%).
 - [x] Injecter le catalogue dans `Wizard.tsx` et `AdminLeads.tsx` pour des calculs uniformes.
 - [x] Vérifier la génération des PDF devis/facture avec les nouveaux calculs.
+
+## Phase 6: Email Templates & Notifications Automatiques (Fev 2026)
+- [x] Ajouter les champs de templates (Objet, Corps) dans `AppSettings`.
+- [x] Créer l'interface d'édition des templates dans l'onglet SETTINGS du Dashboard Admin.
+- [x] Intégrer les templates dynamiques dans l'envoi manuel d'e-mails (remplacement de `{{client_name}}`).
+- [x] Ajouter la prise en charge des pièces jointes (Base64) dans `notifications.ts`.
+- [x] Automatiser l'envoi de notifications internes avec pièce jointe lors de la validation client (Devis) et de la sauvegarde Admin (Facture).

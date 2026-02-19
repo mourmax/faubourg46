@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/components';
-import { LogOut, LayoutDashboard, Database, Briefcase, Plus, Settings, MessageCircle, Save, Loader2 } from 'lucide-react';
+import { LogOut, LayoutDashboard, Database, Briefcase, Plus, Settings, MessageCircle, Save, Loader2, Mail } from 'lucide-react';
 import { FORMULAS as INITIAL_FORMULAS, CHAMPAGNES as INITIAL_CHAMPAGNES, EXTRAS as INITIAL_EXTRAS, INITIAL_SELECTION } from '../lib/data';
 import type { FormulaDefinition, QuoteItem, QuoteLead, AppSettings } from '../lib/types';
 import { AdminCatalogue } from './AdminCatalogue';
@@ -55,7 +55,11 @@ export function AdminDashboard() {
             emailJsPublicKey: settings?.emailJsPublicKey || '',
             emailJsTemplateId: settings?.emailJsTemplateId || '',
             emailJsServiceId: settings?.emailJsServiceId || 'service_54e2uef',
-            emailJsPrivateKey: settings?.emailJsPrivateKey || ''
+            emailJsPrivateKey: settings?.emailJsPrivateKey || '',
+            emailQuoteSubject: settings?.emailQuoteSubject || '',
+            emailQuoteBody: settings?.emailQuoteBody || '',
+            emailInvoiceSubject: settings?.emailInvoiceSubject || '',
+            emailInvoiceBody: settings?.emailInvoiceBody || ''
         };
 
         setSettings(updatedSettings);
@@ -329,18 +333,92 @@ export function AdminDashboard() {
                                         </p>
                                     </div>
 
-                                    <div className="pt-4">
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-10 rounded-[3rem] shadow-2xl shadow-dark-900/5 space-y-8 border border-neutral-100">
+                                <div className="flex items-center gap-4 border-b border-neutral-100 pb-6">
+                                    <div className="w-10 h-10 bg-gold-50 rounded-xl flex items-center justify-center">
+                                        <Mail className="w-6 h-6 text-gold-600" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-dark-900 uppercase tracking-widest">Templates d'Email</h3>
+                                </div>
+
+                                <div className="space-y-10">
+                                    {/* Devis Template */}
+                                    <div className="space-y-6">
+                                        <h4 className="text-[12px] font-black text-gold-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <Briefcase className="w-4 h-4" />
+                                            Envoi de Devis
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Objet du mail</label>
+                                                <input
+                                                    className="w-full h-14 bg-neutral-50 border border-neutral-200 rounded-2xl px-6 text-dark-900 font-black focus:border-gold-500 outline-none transition-all"
+                                                    value={settings?.emailQuoteSubject || ''}
+                                                    onChange={(e) => handleUpdateSettings({ emailQuoteSubject: e.target.value })}
+                                                    placeholder="Objet..."
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Corps du message</label>
+                                                <textarea
+                                                    className="w-full h-40 bg-neutral-50 border border-neutral-200 rounded-[2rem] p-6 text-sm font-medium text-dark-900 focus:border-gold-500 outline-none transition-all resize-none"
+                                                    value={settings?.emailQuoteBody || ''}
+                                                    onChange={(e) => handleUpdateSettings({ emailQuoteBody: e.target.value })}
+                                                    placeholder="Message..."
+                                                />
+                                                <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight mt-1 ml-2">
+                                                    💡 Utilisez <code className="bg-neutral-100 px-1 rounded text-gold-600">{"{{client_name}}"}</code> pour le nom du client.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Facture Template */}
+                                    <div className="space-y-6 pt-6 border-t border-dashed border-neutral-100">
+                                        <h4 className="text-[12px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <Plus className="w-4 h-4" />
+                                            Envoi de Facture
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Objet du mail</label>
+                                                <input
+                                                    className="w-full h-14 bg-neutral-50 border border-neutral-200 rounded-2xl px-6 text-dark-900 font-black focus:border-gold-500 outline-none transition-all"
+                                                    value={settings?.emailInvoiceSubject || ''}
+                                                    onChange={(e) => handleUpdateSettings({ emailInvoiceSubject: e.target.value })}
+                                                    placeholder="Objet..."
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-2">Corps du message</label>
+                                                <textarea
+                                                    className="w-full h-40 bg-neutral-50 border border-neutral-200 rounded-[2rem] p-6 text-sm font-medium text-dark-900 focus:border-gold-500 outline-none transition-all resize-none"
+                                                    value={settings?.emailInvoiceBody || ''}
+                                                    onChange={(e) => handleUpdateSettings({ emailInvoiceBody: e.target.value })}
+                                                    placeholder="Message..."
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-gold-50 border border-gold-100 rounded-2xl">
+                                        <p className="text-[10px] text-gold-700 font-black uppercase tracking-widest italic flex items-center gap-2">
+                                            <span>💡</span>
+                                            Le bouton d'accès au document est automatiquement ajouté à la fin de tous les e-mails.
+                                        </p>
+                                    </div>
+
+                                    <div className="pt-2">
                                         <Button
                                             onClick={handleSaveSettings}
                                             disabled={isSavingSettings}
                                             className="w-full h-16 text-sm font-black uppercase tracking-widest gold-gradient text-white gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all rounded-[1.5rem] border-none"
                                         >
-                                            {isSavingSettings ? (
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                            ) : (
-                                                <Save className="w-5 h-5" />
-                                            )}
-                                            {isSavingSettings ? 'SAUVEGARDE...' : 'ENREGISTRER LES RÉGLAGES'}
+                                            {isSavingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                                            {isSavingSettings ? 'SAUVEGARDE...' : 'ENREGISTRER LES TEMPLATES'}
                                         </Button>
                                     </div>
                                 </div>
