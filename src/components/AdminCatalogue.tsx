@@ -53,38 +53,44 @@ export function AdminCatalogue({
 
                                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-100">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500 text-blue-600">Part HT (TVA 10%)</label>
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500 text-blue-600">Montant TTC (TVA 10%)</label>
                                         <div className="flex gap-2">
                                             <div className="relative flex-1">
                                                 <Input
                                                     type="number"
                                                     step="0.01"
                                                     className="bg-blue-50/50 border-blue-100 text-neutral-900 h-12 text-lg font-black"
-                                                    value={f.part10Ht}
-                                                    onChange={e => onFormulaChange(f.id, 'part10Ht', parseFloat(e.target.value) || 0)}
+                                                    value={(f.part10Ht * 1.1).toFixed(2)}
+                                                    onChange={e => {
+                                                        const ttc = parseFloat(e.target.value) || 0;
+                                                        onFormulaChange(f.id, 'part10Ht', ttc / 1.1);
+                                                    }}
                                                 />
                                             </div>
                                             <div className="w-16 h-12 bg-blue-100/30 border border-blue-100 rounded-xl flex flex-col items-center justify-center">
-                                                <span className="text-[7px] font-black text-blue-600 uppercase">TVA</span>
-                                                <span className="text-xs font-black text-blue-900">{(f.part10Ht * 0.1).toFixed(2)}€</span>
+                                                <span className="text-[7px] font-black text-blue-600 uppercase">HT</span>
+                                                <span className="text-xs font-black text-blue-900">{f.part10Ht.toFixed(2)}€</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500 text-purple-600">Part HT (TVA 20%)</label>
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500 text-purple-600">Montant TTC (TVA 20%)</label>
                                         <div className="flex gap-2">
                                             <div className="relative flex-1">
                                                 <Input
                                                     type="number"
                                                     step="0.01"
                                                     className="bg-purple-50/50 border-purple-100 text-neutral-900 h-12 text-lg font-black"
-                                                    value={f.part20Ht}
-                                                    onChange={e => onFormulaChange(f.id, 'part20Ht', parseFloat(e.target.value) || 0)}
+                                                    value={(f.part20Ht * 1.2).toFixed(2)}
+                                                    onChange={e => {
+                                                        const ttc = parseFloat(e.target.value) || 0;
+                                                        onFormulaChange(f.id, 'part20Ht', ttc / 1.2);
+                                                    }}
                                                 />
                                             </div>
                                             <div className="w-16 h-12 bg-purple-100/30 border border-purple-100 rounded-xl flex flex-col items-center justify-center">
-                                                <span className="text-[7px] font-black text-purple-600 uppercase">TVA</span>
-                                                <span className="text-xs font-black text-purple-900">{(f.part20Ht * 0.2).toFixed(2)}€</span>
+                                                <span className="text-[7px] font-black text-purple-600 uppercase">HT</span>
+                                                <span className="text-xs font-black text-purple-900">{f.part20Ht.toFixed(2)}€</span>
                                             </div>
                                         </div>
                                     </div>
@@ -109,13 +115,16 @@ export function AdminCatalogue({
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label className="text-[8px] font-black uppercase tracking-widest text-neutral-400">Prix HT</label>
+                                        <label className="text-[8px] font-black uppercase tracking-widest text-neutral-400">Prix TTC</label>
                                         <Input
                                             type="number"
                                             step="0.01"
                                             className="bg-black/5 border-neutral-100 text-neutral-900 h-10 text-sm font-black"
-                                            value={item.unitPriceHt}
-                                            onChange={e => onOptionChange(item.name, 'unitPriceHt', parseFloat(e.target.value) || 0, 'champagne')}
+                                            value={(item.unitPriceHt * (1 + item.vatRate / 100)).toFixed(2)}
+                                            onChange={e => {
+                                                const ttc = parseFloat(e.target.value) || 0;
+                                                onOptionChange(item.name, 'unitPriceHt', ttc / (1 + item.vatRate / 100), 'champagne');
+                                            }}
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -123,7 +132,13 @@ export function AdminCatalogue({
                                         <select
                                             className="w-full bg-black/5 border-neutral-100 text-neutral-900 h-10 text-sm font-black rounded-lg px-2 appearance-none focus:outline-none focus:ring-1 focus:ring-gold-500"
                                             value={item.vatRate}
-                                            onChange={e => onOptionChange(item.name, 'vatRate', parseInt(e.target.value) as VatRate, 'champagne')}
+                                            onChange={e => {
+                                                const newRate = parseInt(e.target.value) as VatRate;
+                                                const currentTtc = item.unitPriceHt * (1 + item.vatRate / 100);
+                                                // Keep TTC stable, update HT
+                                                onOptionChange(item.name, 'vatRate', newRate, 'champagne');
+                                                onOptionChange(item.name, 'unitPriceHt', currentTtc / (1 + newRate / 100), 'champagne');
+                                            }}
                                         >
                                             <option value={10}>10%</option>
                                             <option value={20}>20%</option>
@@ -131,8 +146,8 @@ export function AdminCatalogue({
                                     </div>
                                 </div>
                                 <div className="pt-2 border-t border-dashed border-neutral-100 flex justify-between items-center">
-                                    <span className="text-[8px] font-black uppercase text-neutral-400">Total TTC</span>
-                                    <span className="text-sm font-black text-gold-600">{(item.unitPriceHt * (1 + item.vatRate / 100)).toFixed(2)}€</span>
+                                    <span className="text-[8px] font-black uppercase text-neutral-400">Montant HT (Reverse)</span>
+                                    <span className="text-sm font-black text-neutral-500">{item.unitPriceHt.toFixed(2)}€</span>
                                 </div>
                             </div>
                         </Card>
@@ -154,13 +169,16 @@ export function AdminCatalogue({
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label className="text-[8px] font-black uppercase tracking-widest text-neutral-400">Forfait HT</label>
+                                        <label className="text-[8px] font-black uppercase tracking-widest text-neutral-400">Prix TTC</label>
                                         <Input
                                             type="number"
                                             step="0.01"
                                             className="bg-black/5 border-neutral-100 text-neutral-900 h-10 text-sm font-black"
-                                            value={item.unitPriceHt}
-                                            onChange={e => onOptionChange(item.name, 'unitPriceHt', parseFloat(e.target.value) || 0, 'extra')}
+                                            value={(item.unitPriceHt * (1 + item.vatRate / 100)).toFixed(2)}
+                                            onChange={e => {
+                                                const ttc = parseFloat(e.target.value) || 0;
+                                                onOptionChange(item.name, 'unitPriceHt', ttc / (1 + item.vatRate / 100), 'extra');
+                                            }}
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -168,7 +186,12 @@ export function AdminCatalogue({
                                         <select
                                             className="w-full bg-black/5 border-neutral-100 text-neutral-900 h-10 text-sm font-black rounded-lg px-2 appearance-none focus:outline-none focus:ring-1 focus:ring-gold-500"
                                             value={item.vatRate}
-                                            onChange={e => onOptionChange(item.name, 'vatRate', parseInt(e.target.value) as VatRate, 'extra')}
+                                            onChange={e => {
+                                                const newRate = parseInt(e.target.value) as VatRate;
+                                                const currentTtc = item.unitPriceHt * (1 + item.vatRate / 100);
+                                                onOptionChange(item.name, 'vatRate', newRate, 'extra');
+                                                onOptionChange(item.name, 'unitPriceHt', currentTtc / (1 + newRate / 100), 'extra');
+                                            }}
                                         >
                                             <option value={10}>10%</option>
                                             <option value={20}>20%</option>
@@ -176,8 +199,8 @@ export function AdminCatalogue({
                                     </div>
                                 </div>
                                 <div className="pt-2 border-t border-dashed border-neutral-100 flex justify-between items-center">
-                                    <span className="text-[8px] font-black uppercase text-neutral-400">Total TTC</span>
-                                    <span className="text-sm font-black text-gold-600">{(item.unitPriceHt * (1 + item.vatRate / 100)).toFixed(2)}€</span>
+                                    <span className="text-[8px] font-black uppercase text-neutral-400">Montant HT (Reverse)</span>
+                                    <span className="text-sm font-black text-neutral-500">{item.unitPriceHt.toFixed(2)}€</span>
                                 </div>
                             </div>
                         </Card>
